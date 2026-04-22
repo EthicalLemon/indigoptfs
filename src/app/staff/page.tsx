@@ -49,12 +49,12 @@ export default function StaffPortal() {
 
   if (!profile) return null
 
-  const TABS: { id: StaffTab; label: string; icon: React.ElementType; roles: string[] }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin', 'staff', 'host'] },
-    { id: 'flights', label: 'Flights', icon: Plane, roles: ['admin', 'staff', 'host'] },
-    { id: 'users', label: 'Users', icon: Users, roles: ['admin'] },
-    { id: 'settings', label: 'Settings', icon: Settings, roles: ['admin', 'staff', 'host'] },
-  ].filter(t => t.roles.includes(profile.role))
+ const TABS = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin', 'staff', 'host'] },
+  { id: 'flights', label: 'Flights', icon: Plane, roles: ['admin', 'staff', 'host'] },
+  { id: 'users', label: 'Users', icon: Users, roles: ['admin'] },
+  { id: 'settings', label: 'Settings', icon: Settings, roles: ['admin', 'staff', 'host'] },
+]
 
   const ROLE_COLORS: Record<string, string> = {
     admin: '#ef4444',
