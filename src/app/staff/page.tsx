@@ -101,7 +101,7 @@ export default function StaffPortal() {
             return (
               <button
                 key={t.id}
-                onClick={() => { setTab(t.id); setSidebarOpen(false) }}
+                onClick={() => { setTab(t.id as StaffTab); setSidebarOpen(false) }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left"
                 style={{
                   background: tab === t.id ? 'rgba(99,102,241,0.12)' : 'transparent',
