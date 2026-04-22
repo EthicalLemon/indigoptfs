@@ -1,8 +1,9 @@
 'use client'
+
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plane, Calendar, Users, ArrowLeftRight, Search } from 'lucide-react'
+import { Plane, Calendar, ArrowLeftRight, Search } from 'lucide-react'
 import { AIRPORTS } from '@/lib/utils'
 import { format } from 'date-fns'
 
@@ -10,165 +11,164 @@ type TripType = 'one-way' | 'round-trip'
 
 export function SearchSection() {
   const router = useRouter()
+
   const [tripType, setTripType] = useState<TripType>('one-way')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [returnDate, setReturnDate] = useState('')
-  const [passengers, setPassengers] = useState(1)
 
   const swap = () => {
-    const tmp = from
+    const temp = from
     setFrom(to)
-    setTo(tmp)
+    setTo(temp)
   }
 
   const search = (e: React.FormEvent) => {
     e.preventDefault()
-    const params = new URLSearchParams({ from, to, date, passengers: String(passengers) })
-    if (tripType === 'round-trip' && returnDate) params.set('returnDate', returnDate)
+    const params = new URLSearchParams({
+      from,
+      to,
+      date,
+    })
     router.push(`/flights?${params.toString()}`)
   }
 
-  const airportOptions = Object.entries(AIRPORTS).map(([code, { city }]) => ({ code, city }))
+  const airportOptions = Object.entries(AIRPORTS).map(([code, { city }]) => ({
+    code,
+    city,
+  }))
 
   return (
-    <section className="relative -mt-16 z-10 px-4 sm:px-6 mb-24">
-      <div className="max-w-5xl mx-auto">
+    <section className="relative -mt-20 z-10 px-4 sm:px-6 mb-24">
+      <div className="max-w-6xl mx-auto">
+
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="indigo-card p-6 md:p-8 shadow-2xl"
-          style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,102,241,0.1)' }}
+          className="rounded-2xl bg-[#0b1220] border border-white/10 p-6 md:p-8 shadow-[0_20px_80px_rgba(0,0,0,0.4)]"
         >
-          {/* Trip type tabs */}
-          <div className="flex gap-1 mb-6 p-1 rounded-lg w-fit" style={{ background: 'var(--bg-tertiary)' }}>
+
+          {/* Trip Tabs */}
+          <div className="flex gap-2 mb-8">
             {(['one-way', 'round-trip'] as TripType[]).map(t => (
               <button
                 key={t}
                 onClick={() => setTripType(t)}
-                className="px-4 py-2 rounded-md text-sm font-medium transition-all capitalize"
-                style={{
-                  background: tripType === t ? 'var(--indigo-primary)' : 'transparent',
-                  color: tripType === t ? 'white' : 'var(--text-muted)',
-                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${
+                  tripType === t
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
               >
                 {t}
               </button>
             ))}
           </div>
 
+          {/* FORM */}
           <form onSubmit={search}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              {/* From */}
-              <div className="relative">
-                <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>From</label>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+
+              {/* FROM */}
+              <div className="md:col-span-3">
+                <label className="block text-xs font-medium text-gray-400 mb-2">
+                  From
+                </label>
                 <div className="relative">
-                  <Plane size={16} className="absolute left-3 top-1/2 -translate-y-1/2 -rotate-45" style={{ color: 'var(--indigo-accent)' }} />
+                  <Plane
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 -rotate-45 text-indigo-400"
+                  />
                   <select
                     value={from}
                     onChange={e => setFrom(e.target.value)}
-                    className="indigo-input pl-9 appearance-none"
+                    className="w-full h-12 pl-12 pr-4 rounded-lg bg-[#0f172a] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   >
-                    <option value="">Select city</option>
+                    <option value="">Select</option>
                     {airportOptions.map(a => (
-                      <option key={a.code} value={a.code}>{a.city} ({a.code})</option>
+                      <option key={a.code} value={a.code}>
+                        {a.city} ({a.code})
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Swap + To */}
-              <div className="relative">
-                <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>To</label>
+              {/* SWAP */}
+              <div className="md:col-span-1 flex justify-center items-center">
+                <button
+                  type="button"
+                  onClick={swap}
+                  className="w-11 h-11 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg hover:scale-105 transition"
+                >
+                  <ArrowLeftRight size={16} className="text-white" />
+                </button>
+              </div>
+
+              {/* TO */}
+              <div className="md:col-span-3">
+                <label className="block text-xs font-medium text-gray-400 mb-2">
+                  To
+                </label>
                 <div className="relative">
-                  <Plane size={16} className="absolute left-3 top-1/2 -translate-y-1/2 rotate-45" style={{ color: 'var(--indigo-accent)' }} />
+                  <Plane
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 rotate-45 text-indigo-400"
+                  />
                   <select
                     value={to}
                     onChange={e => setTo(e.target.value)}
-                    className="indigo-input pl-9 appearance-none"
+                    className="w-full h-12 pl-12 pr-4 rounded-lg bg-[#0f172a] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   >
-                    <option value="">Select city</option>
+                    <option value="">Select</option>
                     {airportOptions.map(a => (
-                      <option key={a.code} value={a.code}>{a.city} ({a.code})</option>
+                      <option key={a.code} value={a.code}>
+                        {a.city} ({a.code})
+                      </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={swap}
-                    className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:rotate-180"
-                    style={{ background: 'var(--indigo-primary)', color: 'white', boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}
-                  >
-                    <ArrowLeftRight size={14} />
-                  </button>
                 </div>
               </div>
 
-              {/* Date */}
-              <div>
-                <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>
-                  {tripType === 'round-trip' ? 'Depart' : 'Date'}
+              {/* DATE */}
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-gray-400 mb-2">
+                  Date
                 </label>
                 <div className="relative">
-                  <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--indigo-accent)' }} />
+                  <Calendar
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"
+                  />
                   <input
                     type="date"
                     value={date}
                     onChange={e => setDate(e.target.value)}
-                    min={format(new Date(), 'yyyy-MM-dd')}
-                    className="indigo-input pl-9"
+                    className="w-full h-12 pl-12 pr-4 rounded-lg bg-[#0f172a] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     required
                   />
                 </div>
               </div>
 
-              {/* Return date or passengers */}
-              {tripType === 'round-trip' ? (
-                <div>
-                  <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>Return</label>
-                  <div className="relative">
-                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--indigo-accent)' }} />
-                    <input
-                      type="date"
-                      value={returnDate}
-                      onChange={e => setReturnDate(e.target.value)}
-                      min={date}
-                      className="indigo-input pl-9"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>Passengers</label>
-                  <div className="relative">
-                    <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--indigo-accent)' }} />
-                    <select value={passengers} onChange={e => setPassengers(Number(e.target.value))} className="indigo-input pl-9 appearance-none">
-                      {[1,2,3,4,5,6,7,8,9].map(n => (
-                        <option key={n} value={n}>{n} Passenger{n > 1 ? 's' : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
+              {/* SEARCH BUTTON */}
+              <div className="md:col-span-3 flex items-end">
+                <button
+                  type="submit"
+                  className="w-full h-12 rounded-lg bg-indigo-600 flex items-center justify-center gap-2 text-white font-medium hover:bg-indigo-700 transition"
+                >
+                  <Search size={18} />
+                  Search Flights
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                ✈ 120+ destinations worldwide • Best price guarantee
-              </p>
-              <button type="submit" className="indigo-btn indigo-btn-primary px-8 py-3 text-base group">
-                <Search size={18} />
-                Search Flights
-                <motion.div
-                  className="absolute inset-0 rounded-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.1), transparent)' }}
-                />
-              </button>
-            </div>
+            {/* FOOT NOTE */}
+            <p className="mt-4 text-xs text-gray-500">
+              ✈ 120+ destinations worldwide • Best price guarantee
+            </p>
           </form>
         </motion.div>
       </div>

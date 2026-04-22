@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,12 +16,10 @@ export default function FlightsContent() {
   const searchParams = useSearchParams()
   const [flights, setFlights] = useState<Flight[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortOption>('departure')
   const [classFilter, setClassFilter] = useState<'all' | 'economy' | 'business' | 'first'>('all')
   const [maxPrice, setMaxPrice] = useState(200000)
 
-  // Stable supabase client ref - never recreated
   const supabaseRef = useRef(createClient())
 
   const from = searchParams.get('from') || ''
@@ -29,213 +28,185 @@ export default function FlightsContent() {
 
   const fetchFlights = async () => {
     setLoading(true)
-    setError(null)
-    const supabase = supabaseRef.current
 
-    let query = supabase
+    const { data } = await supabaseRef.current
       .from('flights')
-      .select('*, host:profiles!host_id(id, full_name, email, role)')
+      .select('*')
       .neq('status', 'cancelled')
       .order('departure_time', { ascending: true })
 
-    if (from) query = query.eq('departure_code', from)
-    if (to)   query = query.eq('arrival_code', to)
-    if (date) {
-      const start = new Date(date); start.setHours(0, 0, 0, 0)
-      const end   = new Date(date); end.setHours(23, 59, 59, 999)
-      query = query
-        .gte('departure_time', start.toISOString())
-        .lte('departure_time', end.toISOString())
-    }
-
-    const { data, error: fetchError } = await query
-
-    if (fetchError) {
-      console.error('Flight fetch error:', fetchError)
-      setError(fetchError.message)
-      setFlights([])
-    } else {
-      setFlights((data as Flight[]) || [])
-    }
+    setFlights((data as Flight[]) || [])
     setLoading(false)
   }
 
-  // Fetch on mount and when search params change
   useEffect(() => {
     fetchFlights()
   }, [from, to, date])
 
-  // Realtime subscription — re-fetch whenever flights table changes
-  useEffect(() => {
-    const supabase = supabaseRef.current
-    const channel = supabase
-      .channel('flights-page-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'flights' }, () => {
-        fetchFlights()
-      })
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [from, to, date])
-
   const sorted = [...flights]
     .filter(f => {
-      const price =
-        classFilter === 'economy'  ? f.price_economy  :
-        classFilter === 'business' ? f.price_business :
-        classFilter === 'first'    ? f.price_first    :
-        Math.min(f.price_economy, f.price_business, f.price_first)
+      const price = Math.min(f.price_economy, f.price_business, f.price_first)
       return price <= maxPrice
     })
     .sort((a, b) => {
-      if (sortBy === 'price')    return a.price_economy - b.price_economy
+      if (sortBy === 'price') return a.price_economy - b.price_economy
       if (sortBy === 'duration') return a.duration_minutes - b.duration_minutes
       return new Date(a.departure_time).getTime() - new Date(b.departure_time).getTime()
     })
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen pt-28 pb-20 bg-[var(--bg-primary)]">
 
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex items-start justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="font-display font-bold text-3xl md:text-4xl mb-1" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="text-3xl md:text-4xl font-semibold text-[var(--text-primary)]">
               {from && to
                 ? `${AIRPORTS[from]?.city || from} → ${AIRPORTS[to]?.city || to}`
-                : 'All Available Flights'}
+                : 'All Flights'}
             </h1>
             {date && (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {new Date(date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              <p className="text-sm text-[var(--text-muted)] mt-1">
+                {new Date(date).toDateString()}
               </p>
             )}
           </div>
+
           <button
             onClick={fetchFlights}
-            className="indigo-btn indigo-btn-ghost mt-1 shrink-0"
-            title="Refresh flights"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border)] text-sm hover:bg-[var(--bg-tertiary)] transition"
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={16} />
             Refresh
           </button>
-        </motion.div>
+        </div>
 
-        {/* Search bar */}
-        <div className="mb-6"><FlightSearchBar /></div>
+        {/* SEARCH */}
+        <div className="mb-8">
+          <FlightSearchBar />
+        </div>
 
-        {/* Error banner */}
-        {error && (
-          <div className="mb-4 p-4 rounded-xl border text-sm" style={{ background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.3)', color: '#f87171' }}>
-            ⚠️ Could not load flights: {error}. Check your Supabase connection and RLS policies.
-          </div>
-        )}
+        <div className="flex gap-8">
 
-        <div className="flex flex-col lg:flex-row gap-6">
+          {/* SIDEBAR */}
+          <div className="w-64 hidden lg:block">
 
-          {/* Sidebar filters */}
-          <motion.aside initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="lg:w-64 shrink-0">
-            <div className="indigo-card p-5 sticky top-24">
-              <div className="flex items-center gap-2 mb-5">
-                <SlidersHorizontal size={16} style={{ color: 'var(--indigo-accent)' }} />
-                <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Filters</h3>
+            <div className="sticky top-28 p-5 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+
+              <div className="flex items-center gap-2 mb-6">
+                <SlidersHorizontal size={16} />
+                <span className="font-medium text-sm">Filters</span>
               </div>
 
-              {/* Sort */}
-              <div className="mb-5">
-                <label className="block text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>Sort By</label>
+              {/* SORT */}
+              <div className="mb-6">
+                <p className="text-xs text-[var(--text-muted)] mb-3 uppercase tracking-wide">
+                  Sort by
+                </p>
+
                 {[
                   { value: 'departure', label: 'Departure Time' },
-                  { value: 'price',     label: 'Lowest Price'   },
-                  { value: 'duration',  label: 'Shortest Flight' },
+                  { value: 'price', label: 'Lowest Price' },
+                  { value: 'duration', label: 'Shortest Flight' },
                 ].map(opt => (
-                  <button key={opt.value} onClick={() => setSortBy(opt.value as SortOption)}
-                    className="flex items-center gap-2 text-sm py-2 px-3 rounded-lg transition-all text-left w-full mb-1"
-                    style={{
-                      background: sortBy === opt.value ? 'rgba(99,102,241,0.15)' : 'transparent',
-                      color: sortBy === opt.value ? 'var(--indigo-accent)' : 'var(--text-secondary)',
-                    }}>
-                    <div className="w-3 h-3 rounded-full border-2 flex-shrink-0"
-                      style={{ borderColor: sortBy === opt.value ? 'var(--indigo-accent)' : '#6b7280', background: sortBy === opt.value ? 'var(--indigo-accent)' : 'transparent' }} />
+                  <button
+                    key={opt.value}
+                    onClick={() => setSortBy(opt.value as SortOption)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition mb-1 ${
+                      sortBy === opt.value
+                        ? 'bg-indigo-600 text-white'
+                        : 'hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+                    }`}
+                  >
                     {opt.label}
                   </button>
                 ))}
               </div>
 
-              {/* Class */}
-              <div className="mb-5">
-                <label className="block text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>Cabin Class</label>
+              {/* CLASS */}
+              <div className="mb-6">
+                <p className="text-xs text-[var(--text-muted)] mb-3 uppercase tracking-wide">
+                  Cabin Class
+                </p>
+
                 {['all', 'economy', 'business', 'first'].map(c => (
-                  <button key={c} onClick={() => setClassFilter(c as any)}
-                    className="flex items-center gap-2 text-sm py-2 px-3 rounded-lg transition-all text-left w-full mb-1 capitalize"
-                    style={{
-                      background: classFilter === c ? 'rgba(99,102,241,0.15)' : 'transparent',
-                      color: classFilter === c ? 'var(--indigo-accent)' : 'var(--text-secondary)',
-                    }}>
-                    <div className="w-3 h-3 rounded-full border-2 flex-shrink-0"
-                      style={{ borderColor: classFilter === c ? 'var(--indigo-accent)' : '#6b7280', background: classFilter === c ? 'var(--indigo-accent)' : 'transparent' }} />
-                    {c === 'all' ? 'All Classes' : c === 'first' ? 'First Class' : c.charAt(0).toUpperCase() + c.slice(1)}
+                  <button
+                    key={c}
+                    onClick={() => setClassFilter(c as any)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition mb-1 ${
+                      classFilter === c
+                        ? 'bg-indigo-600 text-white'
+                        : 'hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    {c === 'all' ? 'All Classes' : c}
                   </button>
                 ))}
               </div>
 
-              {/* Price */}
+              {/* PRICE */}
               <div>
-                <label className="block text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs text-[var(--text-muted)] mb-2">
                   Max Price: ₹{maxPrice.toLocaleString()}
-                </label>
-                <input type="range" min={5000} max={200000} step={1000} value={maxPrice}
-                  onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-indigo-500" />
-                <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>₹5,000</span><span>₹2,00,000</span>
-                </div>
-              </div>
-            </div>
-          </motion.aside>
+                </p>
 
-          {/* Flight list */}
+                <input
+                  type="range"
+                  min={5000}
+                  max={200000}
+                  step={1000}
+                  value={maxPrice}
+                  onChange={e => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* RESULTS */}
           <div className="flex-1">
+
             {loading ? (
               <div className="space-y-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="indigo-card p-6 h-36 animate-pulse">
-                    <div className="h-4 rounded-lg w-1/3 mb-3" style={{ background: 'var(--bg-tertiary)' }} />
-                    <div className="h-3 rounded-lg w-1/2" style={{ background: 'var(--bg-tertiary)' }} />
-                  </div>
+                {[1,2,3].map(i => (
+                  <div key={i} className="h-32 rounded-xl bg-[var(--bg-secondary)] animate-pulse border border-[var(--border)]" />
                 ))}
               </div>
             ) : sorted.length === 0 ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="indigo-card p-12 text-center">
-                <Plane size={48} className="mx-auto mb-4 opacity-20" />
-                <h3 className="font-display font-bold text-xl mb-2" style={{ color: 'var(--text-primary)' }}>No flights found</h3>
-                <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-                  {from || to || date
-                    ? 'No flights match your search. Try different dates or routes.'
-                    : 'No flights have been created yet. Staff can add flights via the portal.'}
+
+              <div className="text-center py-20 border rounded-xl bg-[var(--bg-secondary)] border-[var(--border)]">
+                <Plane size={40} className="mx-auto mb-4 opacity-20" />
+                <h3 className="text-lg font-medium mb-2">No flights found</h3>
+                <p className="text-sm text-[var(--text-muted)]">
+                  Try adjusting filters or selecting another route.
                 </p>
-                {(from || to || date) && (
-                  <a href="/flights" className="indigo-btn indigo-btn-ghost text-sm">Clear filters →</a>
-                )}
-              </motion.div>
+              </div>
+
             ) : (
-              <div className="space-y-4">
-                <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                  {sorted.length} flight{sorted.length !== 1 ? 's' : ''} found
+
+              <div className="space-y-5">
+                <p className="text-sm text-[var(--text-muted)]">
+                  {sorted.length} flights found
                 </p>
+
                 <AnimatePresence>
                   {sorted.map((flight, i) => (
                     <motion.div
                       key={flight.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: i * 0.04 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: i * 0.03 }}
                     >
                       <FlightCard flight={flight} />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
+
             )}
           </div>
         </div>
