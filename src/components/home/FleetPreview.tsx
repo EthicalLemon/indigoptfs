@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const PLANES = [
   {
@@ -73,49 +74,70 @@ export function FleetPreview() {
 
           {/* LEFT LIST */}
           <div className="space-y-4">
-            {PLANES.map((plane) => (
-              <button
-                key={plane.name}
-                onClick={() => setActive(plane)}
-                className="w-full text-left p-5 rounded-xl transition-all"
-                style={{
-                  background:
-                    active.name === plane.name
+            {PLANES.map((plane) => {
+              const isActive = active.name === plane.name
+
+              return (
+                <motion.button
+                  key={plane.name}
+                  onClick={() => setActive(plane)}
+                  whileHover={{ scale: 1.03, y: -3 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                  className="w-full text-left p-5 rounded-xl transition-all"
+                  style={{
+                    background: isActive
                       ? 'var(--bg-secondary)'
                       : 'transparent',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div
-                  className="text-lg font-medium"
-                  style={{ color: 'var(--text-primary)' }}
+                    border: '1px solid var(--border)',
+                    boxShadow: isActive
+                      ? '0 10px 30px rgba(99,102,241,0.15)'
+                      : 'none',
+                  }}
                 >
-                  {plane.name}
-                </div>
+                  <div
+                    className="text-lg font-medium"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {plane.name}
+                  </div>
 
-                <div
-                  className="text-sm mt-1"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  {plane.type}
-                </div>
-              </button>
-            ))}
+                  <div
+                    className="text-sm mt-1"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {plane.type}
+                  </div>
+                </motion.button>
+              )
+            })}
           </div>
 
           {/* RIGHT DETAILS */}
-          <div
+          <motion.div
+            layout
             className="rounded-xl p-6"
             style={{
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)'
             }}
           >
-            <img
-              src={active.image}
-              alt={active.name}
-              className="w-full h-60 object-cover rounded-lg mb-6"
-            />
+
+            {/* IMAGE */}
+            <div className="relative overflow-hidden rounded-lg mb-6">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={active.image}
+                  src={active.image}
+                  alt={active.name}
+                  className="w-full h-60 object-cover"
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </AnimatePresence>
+            </div>
 
             <h3
               className="text-2xl font-semibold mb-4"
@@ -139,7 +161,7 @@ export function FleetPreview() {
             >
               {active.notes}
             </p>
-          </div>
+          </motion.div>
 
         </div>
       </div>

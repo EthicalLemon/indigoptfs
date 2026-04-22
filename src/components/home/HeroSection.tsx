@@ -1,28 +1,53 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Star } from 'lucide-react'
 
 export function HeroSection() {
+  const { scrollY } = useScroll()
+
+  // Parallax
+  const bgY = useTransform(scrollY, [0, 500], [0, 120])
+  const contentY = useTransform(scrollY, [0, 500], [0, -60])
+
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden pt-28 pb-20">
 
-      {/* THEME BACKGROUND (FIXED) */}
-      <div className="absolute inset-0 bg-[var(--bg-primary)]" />
+      {/* BACKGROUND (PARALLAX) */}
+      <motion.div style={{ y: bgY }} className="absolute inset-0">
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: 'var(--bg-primary)' }}
+        />
 
-      {/* SUBTLE GRADIENT (ADAPTS TO THEME) */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(circle at 50% 0%, rgba(99,102,241,0.10), transparent 60%),
-            radial-gradient(circle at 80% 20%, rgba(99,102,241,0.06), transparent 50%)
-          `
-        }}
-      />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.12), transparent 60%)',
+          }}
+        />
+      </motion.div>
 
-      {/* CONTENT */}
-      <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
+      {/* ✅ LOGO (NO BORDER / NO GLASS) */}
+      <div className="absolute top-6 left-6 z-20">
+        <Image
+          src="/planes/logo.jpg"
+          alt="IndiGo"
+          width={110}
+          height={35}
+          className="object-contain"
+          priority
+        />
+      </div>
+
+      {/* CONTENT (PARALLAX) */}
+      <motion.div
+        style={{ y: contentY }}
+        className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center"
+      >
 
         {/* BADGE */}
         <motion.div
@@ -30,13 +55,7 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm"
-            style={{
-              borderColor: 'var(--border)',
-              background: 'var(--bg-secondary)',
-              color: 'var(--indigo-accent)'
-            }}
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-indigo-300">
             <Star size={14} fill="currentColor" />
             Awarded Best Airline Experience 2024
           </div>
@@ -46,12 +65,11 @@ export function HeroSection() {
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1]"
-          style={{ color: 'var(--text-primary)' }}
+          className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] text-white"
         >
-          Fly <span style={{ color: 'var(--indigo-accent)' }}>Beyond</span>
+          Fly <span className="text-indigo-400">Beyond</span>
           <br />
-          <span style={{ color: 'var(--text-secondary)' }} className="font-light italic">
+          <span className="text-gray-300 font-light italic">
             the Horizon
           </span>
         </motion.h1>
@@ -60,8 +78,7 @@ export function HeroSection() {
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-lg max-w-2xl"
-          style={{ color: 'var(--text-secondary)' }}
+          className="mt-6 text-lg text-gray-400 max-w-2xl"
         >
           Experience world-class aviation with IndiGo Airlines.
           120+ destinations, seamless journeys, premium comfort.
@@ -75,11 +92,7 @@ export function HeroSection() {
         >
           <Link
             href="/flights"
-            className="px-8 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition"
-            style={{
-              background: 'var(--indigo-primary)',
-              color: '#fff'
-            }}
+            className="px-8 py-3 rounded-lg bg-indigo-600 text-white font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
           >
             Search Flights
             <ArrowRight size={18} />
@@ -87,17 +100,12 @@ export function HeroSection() {
 
           <Link
             href="/routes-network"
-            className="px-8 py-3 rounded-lg border transition"
-            style={{
-              borderColor: 'var(--border)',
-              color: 'var(--text-primary)',
-              background: 'transparent'
-            }}
+            className="px-8 py-3 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition"
           >
             Explore Routes
           </Link>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   )
 }
