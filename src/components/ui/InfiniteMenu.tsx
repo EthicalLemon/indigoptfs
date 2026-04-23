@@ -625,10 +625,10 @@ class ArcballControl {
 }
 
 interface MenuItem {
-  image: string;
-  link: string;
-  title: string;
-  description: string;
+  image: string
+  link?: string   // ✅ FIXED (optional)
+  title: string
+  description: string
 }
 
 type ActiveItemCallback = (index: number) => void;
