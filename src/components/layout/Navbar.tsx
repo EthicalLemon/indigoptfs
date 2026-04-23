@@ -14,6 +14,8 @@ const NAV_LINKS = [
   { href: '/fleet', label: 'Fleet' },
   { href: '/routes-network', label: 'Network' },
   { href: '/meals', label: 'Services' },
+  { href: '/about', label: 'About' },      // ← add this
+  { href: '/contact', label: 'Blog' }, 
 ]
 
 export function Navbar() {
