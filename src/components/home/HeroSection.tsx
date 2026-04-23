@@ -1,37 +1,39 @@
 'use client'
-
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Star } from 'lucide-react'
+import LineWaves from '@/components/ui/LineWaves'
 
 export function HeroSection() {
   const { scrollY } = useScroll()
-
-  // Parallax
   const bgY = useTransform(scrollY, [0, 500], [0, 120])
   const contentY = useTransform(scrollY, [0, 500], [0, -60])
 
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden pt-28 pb-20">
 
-      {/* BACKGROUND (PARALLAX) */}
-      <motion.div style={{ y: bgY }} className="absolute inset-0">
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: 'var(--bg-primary)' }}
-        />
+      {/* SOLID DARK BACKGROUND */}
+      <div className="absolute inset-0 bg-[#0a0a0f]" />
 
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(circle at 50% 0%, rgba(99,102,241,0.12), transparent 60%)',
-          }}
-        />
-      </motion.div>
+      {/* LINE WAVES — full screen WebGL */}
+      <LineWaves
+        speed={0.3}
+        innerLineCount={32}
+        outerLineCount={36}
+        warpIntensity={0.9}
+        rotation={-45}
+        edgeFadeWidth={0.0}
+        colorCycleSpeed={0.5}
+        brightness={0.5}
+        color1="#E20017"
+        color2="#0D006B"
+        color3="#780041"
+        enableMouseInteraction={true}
+        mouseInfluence={2.0}
+      />
 
-      {/* ✅ LOGO (NO BORDER / NO GLASS) */}
+      {/* LOGO */}
       <div className="absolute top-6 left-6 z-20">
         <Image
           src="/planes/logo.jpg"
@@ -43,69 +45,68 @@ export function HeroSection() {
         />
       </div>
 
-      {/* CONTENT (PARALLAX) */}
+      {/* CONTENT */}
       <motion.div
         style={{ y: contentY }}
         className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center"
       >
-
-        {/* BADGE */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm text-indigo-300">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm text-white">
             <Star size={14} fill="currentColor" />
             Awarded Best Airline Experience 2024
           </div>
         </motion.div>
 
-        {/* TITLE */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] text-white"
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] text-white drop-shadow-lg"
         >
-          Fly <span className="text-indigo-400">Beyond</span>
+          Fly <span className="text-indigo-300">Beyond</span>
           <br />
-          <span className="text-gray-300 font-light italic">
+          <span className="text-gray-200 font-light italic">
             the Horizon
           </span>
         </motion.h1>
 
-        {/* SUBTEXT */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-lg text-gray-400 max-w-2xl"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-6 text-lg text-gray-300 max-w-2xl drop-shadow"
         >
           Experience world-class aviation with IndiGo Airlines.
           120+ destinations, seamless journeys, premium comfort.
         </motion.p>
 
-        {/* BUTTONS */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-10 flex flex-col sm:flex-row gap-4"
         >
           <Link
             href="/flights"
-            className="px-8 py-3 rounded-lg bg-indigo-600 text-white font-medium flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
+            className="px-8 py-3 rounded-full bg-white text-gray-900 font-semibold flex items-center justify-center gap-2 hover:bg-gray-100 transition shadow-lg"
           >
             Search Flights
             <ArrowRight size={18} />
           </Link>
-
           <Link
             href="/routes-network"
-            className="px-8 py-3 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition"
+            className="px-8 py-3 rounded-full border border-white/30 backdrop-blur-sm text-white hover:bg-white/10 transition font-medium"
           >
             Explore Routes
           </Link>
         </motion.div>
       </motion.div>
+
     </section>
   )
 }
