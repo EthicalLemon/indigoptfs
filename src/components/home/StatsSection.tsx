@@ -1,7 +1,7 @@
 'use client'
 import { motion, useInView } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
-import CardSwap, { Card } from "@/components/CardSwap"
+
 function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
@@ -9,12 +9,12 @@ function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
 
   useEffect(() => {
     if (!inView) return
-    let start = 0
+    let val = 0
     const step = target / 60
     const timer = setInterval(() => {
-      start += step
-      if (start >= target) { setCount(target); clearInterval(timer) }
-      else setCount(Math.floor(start))
+      val += step
+      if (val >= target) { setCount(target); clearInterval(timer) }
+      else setCount(Math.floor(val))
     }, 16)
     return () => clearInterval(timer)
   }, [inView, target])
@@ -22,12 +22,16 @@ function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   StatsSection
+───────────────────────────────────────────────────────────────────────────── */
+
 export function StatsSection() {
   const stats = [
-    { value: 120, suffix: '+', label: 'Global Destinations', desc: 'Across 6 continents' },
-    { value: 2000000, suffix: '+', label: 'Happy Passengers', desc: 'And counting every day' },
-    { value: 98, suffix: '%', label: 'On-Time Departures', desc: 'Industry-leading reliability' },
-    { value: 47, suffix: '', label: 'Aircraft Fleet', desc: 'Modern & fuel-efficient' },
+    { value: 120,     suffix: '+', label: 'Global Destinations', desc: 'Across 6 continents'          },
+    { value: 2000000, suffix: '+', label: 'Happy Passengers',    desc: 'And counting every day'       },
+    { value: 98,      suffix: '%', label: 'On-Time Departures',  desc: 'Industry-leading reliability' },
+    { value: 47,      suffix: '',  label: 'Aircraft Fleet',      desc: 'Modern & fuel-efficient'      },
   ]
 
   return (
@@ -43,12 +47,22 @@ export function StatsSection() {
               transition={{ delay: i * 0.1, duration: 0.5 }}
               className="indigo-card p-6 text-center"
             >
-              <div className="font-display font-bold text-4xl md:text-5xl mb-1"
-                style={{ background: 'linear-gradient(135deg, var(--indigo-accent), var(--gold))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <div
+                className="font-display font-bold text-4xl md:text-5xl mb-1"
+                style={{
+                  background: 'linear-gradient(135deg, var(--indigo-accent), var(--gold))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
                 <Counter target={stat.value} suffix={stat.suffix} />
               </div>
-              <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{stat.label}</div>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{stat.desc}</div>
+              <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>
+                {stat.label}
+              </div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {stat.desc}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -57,15 +71,177 @@ export function StatsSection() {
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Destination data
+───────────────────────────────────────────────────────────────────────────── */
+
+const DESTINATIONS = [
+  {
+    city: 'Dubai',     code: 'DXB', country: 'UAE',       price: '₹18,500', tag: 'Popular',
+    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+    hero: {
+      eyebrow: 'Top Pick from Delhi',
+      title: 'Golden City,',
+      em: 'Dubai',
+      subtitle: "Towers that pierce the clouds, souks that shimmer with gold. The desert's most dazzling metropolis awaits.",
+      tag: '✦ Most booked this season',
+      tagBg: 'rgba(255,159,10,0.15)',
+      tagColor: '#f59e0b',
+    },
+  },
+  {
+    city: 'Singapore', code: 'SIN', country: 'Singapore', price: '₹24,200', tag: 'Trending',
+    image: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80',
+    hero: {
+      eyebrow: 'Trending Now',
+      title: 'The Lion City,',
+      em: 'Singapore',
+      subtitle: 'A futuristic garden state where hawker lanes meet rooftop infinity pools — the perfect east-meets-west escape.',
+      tag: '↑ Searches up 42% this week',
+      tagBg: 'rgba(99,102,241,0.15)',
+      tagColor: 'var(--indigo-accent)',
+    },
+  },
+  {
+    city: 'London',    code: 'LHR', country: 'UK',        price: '₹52,000', tag: '',
+    image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80',
+    hero: {
+      eyebrow: 'Classic Europe',
+      title: 'The Eternal,',
+      em: 'London',
+      subtitle: 'Royal parks, world-class museums and a skyline that has inspired centuries of poetry. Timeless.',
+      tag: '✦ Best in autumn & winter',
+      tagBg: 'rgba(148,163,184,0.12)',
+      tagColor: '#94a3b8',
+    },
+  },
+  {
+    city: 'Bangkok',   code: 'BKK', country: 'Thailand',  price: '₹16,800', tag: 'Sale',
+    image: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80',
+    hero: {
+      eyebrow: 'Limited Time Sale',
+      title: 'City of Angels,',
+      em: 'Bangkok',
+      subtitle: 'Street food that blows your mind, temples bathed in gold, nightlife that never sleeps — all at a steal.',
+      tag: '⚡ Sale ends soon',
+      tagBg: 'rgba(239,68,68,0.15)',
+      tagColor: '#ef4444',
+    },
+  },
+  {
+    city: 'Tokyo',     code: 'NRT', country: 'Japan',     price: '₹38,900', tag: '',
+    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80',
+    hero: {
+      eyebrow: 'Discover Asia',
+      title: 'Land of the Rising',
+      em: 'Sun — Tokyo',
+      subtitle: 'Cherry blossoms, ramen alleys, neon-lit Shibuya crossings and centuries of samurai heritage.',
+      tag: '✦ Best for spring travel',
+      tagBg: 'rgba(251,113,133,0.15)',
+      tagColor: '#fb7185',
+    },
+  },
+  {
+    city: 'Paris',     code: 'CDG', country: 'France',    price: '₹48,500', tag: '',
+    image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&q=80',
+    hero: {
+      eyebrow: 'Romance Awaits',
+      title: 'City of Light,',
+      em: 'Paris',
+      subtitle: "Croissants at dawn, the Eiffel Tower at dusk, and art around every cobblestone corner. C'est magnifique.",
+      tag: '✦ Perfect for couples',
+      tagBg: 'rgba(167,139,250,0.15)',
+      tagColor: '#a78bfa',
+    },
+  },
+] as const
+
+type Destination = typeof DESTINATIONS[number]
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────────────────────────────────────── */
+
+function tagColor(tag: string) {
+  if (tag === 'Sale')     return '#ef4444'
+  if (tag === 'Trending') return 'var(--indigo-primary)'
+  if (tag === 'Popular')  return 'var(--gold)'
+  return 'var(--gold)'
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Hero text block — animated per destination
+───────────────────────────────────────────────────────────────────────────── */
+
+function DestinationHero({ dest }: { dest: Destination }) {
+  const h = dest.hero
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={dest.code}
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -16 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-10"
+        style={{ minHeight: 158 }}
+      >
+        <p
+          className="text-xs tracking-widest uppercase font-semibold mb-3"
+          style={{ color: 'var(--indigo-accent)' }}
+        >
+          {h.eyebrow}
+        </p>
+        <h2
+          className="font-display font-bold text-4xl md:text-5xl leading-tight mb-3"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {h.title}{' '}
+          <span className="italic font-light" style={{ color: 'var(--text-muted)' }}>
+            {h.em}
+          </span>
+        </h2>
+        <p
+          className="text-sm leading-relaxed mb-4"
+          style={{ color: 'var(--text-muted)', maxWidth: 360 }}
+        >
+          {h.subtitle}
+        </p>
+        <span
+          className="inline-block text-xs font-bold px-3 py-1.5 rounded-full"
+          style={{ background: h.tagBg, color: h.tagColor }}
+        >
+          {h.tag}
+        </span>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DestinationsSection  ← THE FIXED ONE
+───────────────────────────────────────────────────────────────────────────── */
+
+// Card dimensions — change these in ONE place and the container auto-sizes.
+const CARD_W            = 500   // px  — card width
+const CARD_H            = 600   // px  — card height
+const CARD_DISTANCE     = 15    // px  — rightward shift per slot
+const VERTICAL_DISTANCE = 12    // px  — upward shift per slot
+const N_CARDS           = DESTINATIONS.length  // 6
+
+// The fan spreads right & up. Add generous padding so nothing clips.
+// Total rightward spread  = (N-1) * CARD_DISTANCE  = 5 * 28 = 140px
+// Total upward spread     = (N-1) * VERTICAL_DIST  = 5 * 14 = 70px
+const CONTAINER_W = CARD_W + (N_CARDS - 1) * CARD_DISTANCE + 60   // 500
+const CONTAINER_H = CARD_H + (N_CARDS - 1) * VERTICAL_DISTANCE + 80 // 530
+
 export function DestinationsSection() {
-  const destinations = [
-    { city: 'Dubai', code: 'DXB', country: 'UAE', price: '₹18,500', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80', tag: 'Popular' },
-    { city: 'Singapore', code: 'SIN', country: 'Singapore', price: '₹24,200', image: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80', tag: 'Trending' },
-    { city: 'London', code: 'LHR', country: 'UK', price: '₹52,000', image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80', tag: '' },
-    { city: 'Bangkok', code: 'BKK', country: 'Thailand', price: '₹16,800', image: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80', tag: 'Sale' },
-    { city: 'Tokyo', code: 'NRT', country: 'Japan', price: '₹38,900', image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80', tag: '' },
-    { city: 'Paris', code: 'CDG', country: 'France', price: '₹48,500', image: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&q=80', tag: '' },
-  ]
+  const router = useRouter()
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  const handleFrontChange = useCallback((idx: number) => {
+    setActiveIdx(idx)
+  }, [])
 
   return (
     <section className="py-20 px-4 sm:px-6">
@@ -86,7 +262,7 @@ export function DestinationsSection() {
           {destinations.map((dest, i) => (
             <motion.div
               key={dest.city}
-              initial={{ opacity: 0, y: 30 }} 
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
@@ -111,25 +287,50 @@ export function DestinationsSection() {
                     <div className="text-white font-display font-bold text-2xl">{dest.city}</div>
                     <div className="text-white/70 text-sm">{dest.country} · {dest.code}</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-white/60">From</div>
-                    <div className="text-white font-bold text-lg">{dest.price}</div>
+
+                  {/* City + price at bottom */}
+                  <div style={{
+                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                    padding: '0 20px 20px',
+                    zIndex: 10,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                      <div>
+                        <p style={{ color: '#fff', fontSize: 24, fontWeight: 700, letterSpacing: '-0.025em', margin: 0, lineHeight: 1 }}>
+                          {dest.city}
+                        </p>
+                        <p style={{ color: 'rgba(255,255,255,0.52)', fontSize: 13, margin: '4px 0 0' }}>
+                          {dest.country}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ color: 'rgba(255,255,255,0.48)', fontSize: 11, margin: '0 0 2px' }}>From</p>
+                        <p style={{ color: '#fff', fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
+                          {dest.price}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                </Card>
+              ))}
+            </CardSwap>
+          </div>
+
         </div>
       </div>
     </section>
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   FleetPreview
+───────────────────────────────────────────────────────────────────────────── */
+
 export function FleetPreview() {
   const aircraft = [
-    { name: 'Boeing 787-9', tag: 'Dreamliner', desc: 'Long-haul luxury with panoramic windows', seats: 296, range: '14,140 km' },
+    { name: 'Boeing 787-9',    tag: 'Dreamliner', desc: 'Long-haul luxury with panoramic windows',      seats: 296, range: '14,140 km' },
     { name: 'Airbus A350-900', tag: 'Ultra Wide', desc: 'Next-gen comfort for ultra-long-haul flights', seats: 315, range: '15,000 km' },
-    { name: 'Airbus A320neo', tag: 'Short-Haul', desc: 'Fuel-efficient workhorse for regional routes', seats: 180, range: '6,300 km' },
+    { name: 'Airbus A320neo',  tag: 'Short-Haul', desc: 'Fuel-efficient workhorse for regional routes', seats: 180, range: '6,300 km'  },
   ]
 
   return (
@@ -142,7 +343,9 @@ export function FleetPreview() {
           className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-4"
         >
           <div>
-            <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>Our Aircraft</p>
+            <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>
+              Our Aircraft
+            </p>
             <h2 className="font-display font-bold text-4xl md:text-5xl" style={{ color: 'var(--text-primary)' }}>
               Modern <span className="italic font-light">Fleet</span>
             </h2>
@@ -161,11 +364,15 @@ export function FleetPreview() {
               className="indigo-card p-6 group"
             >
               <div className="text-6xl mb-4 group-hover:animate-float">✈️</div>
-              <div className="text-xs px-2 py-1 rounded-full w-fit mb-3"
-                style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--indigo-accent)' }}>
+              <div
+                className="text-xs px-2 py-1 rounded-full w-fit mb-3"
+                style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--indigo-accent)' }}
+              >
                 {ac.tag}
               </div>
-              <h3 className="font-display font-bold text-xl mb-2" style={{ color: 'var(--text-primary)' }}>{ac.name}</h3>
+              <h3 className="font-display font-bold text-xl mb-2" style={{ color: 'var(--text-primary)' }}>
+                {ac.name}
+              </h3>
               <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{ac.desc}</p>
               <div className="flex gap-6 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                 <div>
@@ -185,25 +392,37 @@ export function FleetPreview() {
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   ServicesSection
+───────────────────────────────────────────────────────────────────────────── */
+
 export function ServicesSection() {
   const services = [
-    { icon: '🍽️', title: 'Gourmet Dining', desc: 'Chef-crafted meals with regional specialties and dietary options for every passenger.' },
-    { icon: '🎬', title: 'Entertainment', desc: 'Thousands of movies, shows, music, and games on our award-winning IFE system.' },
-    { icon: '🛋️', title: 'Premium Lounges', desc: 'Exclusive access to IndiGo Blue Lounges at 40+ airports worldwide.' },
-    { icon: '💼', title: 'Generous Baggage', desc: '30kg checked baggage allowance on all flights, with extra for Premium travelers.' },
-    { icon: '📶', title: 'In-flight WiFi', desc: 'Stay connected at 35,000 feet with high-speed Ku-band satellite internet.' },
-    { icon: '🌍', title: 'Loyalty Program', desc: 'Earn IndiGo Miles on every flight and redeem for free flights, upgrades, and more.' },
+    { icon: '🍽️', title: 'Gourmet Dining',  desc: 'Chef-crafted meals with regional specialties and dietary options for every passenger.'   },
+    { icon: '🎬', title: 'Entertainment',    desc: 'Thousands of movies, shows, music, and games on our award-winning IFE system.'           },
+    { icon: '🛋️', title: 'Premium Lounges', desc: 'Exclusive access to IndiGo Blue Lounges at 40+ airports worldwide.'                     },
+    { icon: '💼', title: 'Generous Baggage', desc: '30 kg checked baggage allowance on all flights, with extra for Premium travelers.'       },
+    { icon: '📶', title: 'In-flight WiFi',   desc: 'Stay connected at 35,000 feet with high-speed Ku-band satellite internet.'              },
+    { icon: '🌍', title: 'Loyalty Program',  desc: 'Earn IndiGo Miles on every flight and redeem for free flights, upgrades, and more.'     },
   ]
 
   return (
     <section className="py-20 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-          <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>Why IndiGo</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>
+            Why IndiGo
+          </p>
           <h2 className="font-display font-bold text-4xl md:text-5xl" style={{ color: 'var(--text-primary)' }}>
             World-Class <span className="italic font-light">Services</span>
           </h2>
         </motion.div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((s, i) => (
             <motion.div
@@ -225,22 +444,43 @@ export function ServicesSection() {
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   TestimonialsSection
+───────────────────────────────────────────────────────────────────────────── */
+
 export function TestimonialsSection() {
   const testimonials = [
-    { name: 'Priya Sharma', role: 'Business Traveler', text: 'IndiGo Airlines has completely changed how I view business travel. The business class is simply unmatched — comfortable, elegant, and the staff are incredibly attentive.', rating: 5, avatar: 'PS' },
-    { name: 'James Chen', role: 'Frequent Flyer', text: 'I\'ve flown 200+ flights in my life and IndiGo consistently delivers the best experience. The food quality alone is worth choosing them over competitors.', rating: 5, avatar: 'JC' },
-    { name: 'Ananya Patel', role: 'Leisure Traveler', text: 'Booked my honeymoon flights with IndiGo. The whole experience — from check-in to landing — was absolutely perfect. Will definitely fly again!', rating: 5, avatar: 'AP' },
+    {
+      name: 'Priya Sharma', role: 'Business Traveler', avatar: 'PS', rating: 5,
+      text: 'IndiGo Airlines has completely changed how I view business travel. The business class is simply unmatched — comfortable, elegant, and the staff are incredibly attentive.',
+    },
+    {
+      name: 'James Chen', role: 'Frequent Flyer', avatar: 'JC', rating: 5,
+      text: "I've flown 200+ flights in my life and IndiGo consistently delivers the best experience. The food quality alone is worth choosing them over competitors.",
+    },
+    {
+      name: 'Ananya Patel', role: 'Leisure Traveler', avatar: 'AP', rating: 5,
+      text: 'Booked my honeymoon flights with IndiGo. The whole experience — from check-in to landing — was absolutely perfect. Will definitely fly again!',
+    },
   ]
 
   return (
     <section className="py-20 px-4 sm:px-6" style={{ background: 'var(--bg-secondary)' }}>
       <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-          <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>Reviews</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-12"
+        >
+          <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>
+            Reviews
+          </p>
           <h2 className="font-display font-bold text-4xl md:text-5xl" style={{ color: 'var(--text-primary)' }}>
             What Passengers <span className="italic font-light">Say</span>
           </h2>
         </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
             <motion.div
@@ -256,7 +496,9 @@ export function TestimonialsSection() {
                   <span key={j} className="text-amber-400">★</span>
                 ))}
               </div>
-              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>"{t.text}"</p>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+                "{t.text}"
+              </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-400 flex items-center justify-center text-white text-xs font-bold">
                   {t.avatar}
