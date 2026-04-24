@@ -1,3 +1,4 @@
+
 import { HeroSection } from '@/components/home/HeroSection'
 import { SearchSection } from '@/components/home/SearchSection'
 import { StatsSection } from '@/components/home/StatsSection'
