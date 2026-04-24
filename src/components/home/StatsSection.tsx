@@ -1,6 +1,13 @@
 'use client'
-import { motion, useInView } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+
+import { motion, AnimatePresence, useInView } from 'framer-motion'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import CardSwap, { Card } from '@/components/ui/CardSwap'
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Counter
+───────────────────────────────────────────────────────────────────────────── */
 
 function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
@@ -223,10 +230,10 @@ function DestinationHero({ dest }: { dest: Destination }) {
 ───────────────────────────────────────────────────────────────────────────── */
 
 // Card dimensions — change these in ONE place and the container auto-sizes.
-const CARD_W            = 500   // px  — card width
-const CARD_H            = 600   // px  — card height
-const CARD_DISTANCE     = 15    // px  — rightward shift per slot
-const VERTICAL_DISTANCE = 12    // px  — upward shift per slot
+const CARD_W            = 300   // px  — card width
+const CARD_H            = 380   // px  — card height
+const CARD_DISTANCE     = 28    // px  — rightward shift per slot
+const VERTICAL_DISTANCE = 14    // px  — upward shift per slot
 const N_CARDS           = DESTINATIONS.length  // 6
 
 // The fan spreads right & up. Add generous padding so nothing clips.
@@ -246,46 +253,167 @@ export function DestinationsSection() {
   return (
     <section className="py-20 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
-          <p className="text-xs tracking-widest uppercase font-semibold mb-3" style={{ color: 'var(--indigo-accent)' }}>Explore the World</p>
-          <h2 className="font-display font-bold text-4xl md:text-5xl" style={{ color: 'var(--text-primary)' }}>
-            Popular <span className="italic font-light">Destinations</span>
-          </h2>
-        </motion.div>
+        <div className="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {destinations.map((dest, i) => (
-            <motion.div
-              key={dest.city}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="group relative overflow-hidden rounded-2xl cursor-pointer"
-              style={{ height: '280px' }}
+          {/* ── Left: animated hero + destination list ── */}
+          <div className="flex-1 min-w-0 w-full">
+            <DestinationHero dest={DESTINATIONS[activeIdx]} />
+
+            <div className="space-y-2">
+              {DESTINATIONS.map((dest, i) => (
+                <motion.div
+                  key={dest.code}
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`/flights?destination=${dest.code}`)}
+                    onKeyDown={e => e.key === 'Enter' && router.push(`/flights?destination=${dest.code}`)}
+                    className="flex items-center justify-between p-4 rounded-2xl cursor-pointer group transition-all duration-200"
+                    style={{
+                      border: `1px solid ${activeIdx === i ? 'rgba(99,102,241,0.4)' : 'var(--border)'}`,
+                      background: activeIdx === i ? 'rgba(99,102,241,0.07)' : 'transparent',
+                    }}
+                    onMouseEnter={e => {
+                      if (activeIdx !== i)
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(99,102,241,0.04)'
+                    }}
+                    onMouseLeave={e => {
+                      if (activeIdx !== i)
+                        (e.currentTarget as HTMLElement).style.background = 'transparent'
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <span
+                        className="font-mono text-xs font-bold w-12 text-center px-2 py-1 rounded-lg"
+                        style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--indigo-accent)' }}
+                      >
+                        {dest.code}
+                      </span>
+                      <div>
+                        <div
+                          className="font-display font-semibold text-base leading-tight"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {dest.city}
+                        </div>
+                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                          {dest.country}
+                        </div>
+                      </div>
+                      {dest.tag ? (
+                        <span
+                          className="text-xs font-bold px-2 py-0.5 rounded-full text-white"
+                          style={{ background: tagColor(dest.tag) }}
+                        >
+                          {dest.tag}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>From</div>
+                        <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                          {dest.price}
+                        </div>
+                      </div>
+                      <span
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-sm"
+                        style={{ color: 'var(--indigo-accent)' }}
+                      >
+                        →
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Right: card stack ───────────────────────────────────────────
+              KEY FIXES vs the broken version:
+              1. Explicit pixel width + height (not h-[520px] with flex-center).
+              2. Width accounts for the rightward fan spread.
+              3. Height accounts for the upward fan spread.
+              4. overflow-visible so fanned cards outside the box still show.
+              5. CardSwap sits at bottom-left; fan grows right+up into free space.
+          ──────────────────────────────────────────────────────────────── */}
+          <div
+            className="flex-shrink-0 hidden lg:block"
+            style={{
+              width:    CONTAINER_W,
+              height:   CONTAINER_H,
+              position: 'relative',
+              overflow: 'visible',
+            }}
+          >
+            <CardSwap
+              width={CARD_W}
+              height={CARD_H}
+              cardDistance={CARD_DISTANCE}
+              verticalDistance={VERTICAL_DISTANCE}
+              delay={3200}
+              pauseOnHover
+              skewAmount={3}
+              easing="elastic"
+              onCardClick={handleFrontChange}
             >
-              <img
-                src={dest.image}
-                alt={dest.city}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              {dest.tag && (
-                <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ background: dest.tag === 'Sale' ? '#ef4444' : dest.tag === 'Trending' ? 'var(--indigo-primary)' : 'var(--gold)', color: 'white' }}>
-                  {dest.tag}
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-white font-display font-bold text-2xl">{dest.city}</div>
-                    <div className="text-white/70 text-sm">{dest.country} · {dest.code}</div>
+              {DESTINATIONS.map(dest => (
+                <Card
+                  key={dest.code}
+                  onClick={() => router.push(`/flights?destination=${dest.code}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Photo */}
+                  <img
+                    src={dest.image}
+                    alt={dest.city}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+
+                  {/* Gradient overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.18) 52%, transparent 100%)',
+                  }} />
+
+                  {/* Tag badge */}
+                  {dest.tag ? (
+                    <div style={{
+                      position: 'absolute', top: 14, left: 14,
+                      background: tagColor(dest.tag),
+                      color: '#fff',
+                      fontSize: 10, fontWeight: 700,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      padding: '4px 10px',
+                      borderRadius: 100,
+                      zIndex: 10,
+                    }}>
+                      {dest.tag}
+                    </div>
+                  ) : null}
+
+                  {/* IATA code — frosted glass chip */}
+                  <div style={{
+                    position: 'absolute', top: 14, right: 14,
+                    background: 'rgba(0,0,0,0.38)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    color: 'rgba(255,255,255,0.88)',
+                    fontSize: 10, fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    padding: '4px 10px',
+                    borderRadius: 100,
+                    zIndex: 10,
+                  }}>
+                    {dest.code}
                   </div>
 
                   {/* City + price at bottom */}
