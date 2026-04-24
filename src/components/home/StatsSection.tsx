@@ -1,7 +1,7 @@
 'use client'
 import { motion, useInView } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
-
+import CardSwap, { Card } from "@/components/CardSwap"
 function Counter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
@@ -86,7 +86,7 @@ export function DestinationsSection() {
           {destinations.map((dest, i) => (
             <motion.div
               key={dest.city}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 30 }} 
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
