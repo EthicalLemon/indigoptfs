@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
+  const supabase = await createClient()
   const { data, error } = await supabase
     .from('flights')
     .select('*, host:profiles!host_id(id, full_name, email, role)')
@@ -12,8 +13,9 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   return NextResponse.json({ flight: data })
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -36,8 +38,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   return NextResponse.json({ flight: data })
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createClient()
+export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

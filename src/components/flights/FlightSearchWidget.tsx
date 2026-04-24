@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftRight, Calendar, Users, Search, Plane } from 'lucide-react'
-import { AIRPORTS } from '@/types'
+import { AIRPORTS } from '@/lib/utils'
+import AnimatedList from '@/components/ui/AnimatedList'
 
 type TripType = 'oneway' | 'roundtrip'
 
@@ -17,8 +18,8 @@ export default function FlightSearchWidget() {
   const [returnDate, setReturnDate] = useState('')
   const [passengers, setPassengers] = useState(1)
   const [seatClass, setSeatClass] = useState('economy')
-  const [originSuggestions, setOriginSuggestions] = useState<string[]>([])
-  const [destSuggestions, setDestSuggestions] = useState<string[]>([])
+  const [originSuggestions, setOriginSuggestions] = useState<any[]>([])
+  const [destSuggestions, setDestSuggestions] = useState<any[]>([])
   const [showOriginSug, setShowOriginSug] = useState(false)
   const [showDestSug, setShowDestSug] = useState(false)
 
@@ -28,13 +29,12 @@ export default function FlightSearchWidget() {
     if (!query || query.length < 1) return []
     const q = query.toUpperCase()
     return airportList
-      .filter(a =>
+      .filter((a: any) =>
         a.code.includes(q) ||
         a.city.toUpperCase().includes(q) ||
         a.name.toUpperCase().includes(q)
       )
       .slice(0, 6)
-      .map(a => `${a.city} (${a.code})`)
   }
 
   const handleOriginChange = (val: string) => {
@@ -105,44 +105,44 @@ export default function FlightSearchWidget() {
       <form onSubmit={handleSearch}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
           {/* Origin */}
-          <div className="md:col-span-3 relative">
-            <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">From</label>
-            <div className="relative">
-              <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400 rotate-45" />
-              <input
-                type="text"
-                value={origin}
-                onChange={(e) => handleOriginChange(e.target.value)}
-                onFocus={() => setShowOriginSug(originSuggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowOriginSug(false), 200)}
-                placeholder="City or Airport"
-                className="input-airline pl-9"
-                required
-              />
-              <AnimatePresence>
-                {showOriginSug && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50 shadow-2xl"
-                  >
-                    {originSuggestions.map((sug) => (
-                      <button
-                        key={sug}
-                        type="button"
-                        onMouseDown={() => { setOrigin(sug); setShowOriginSug(false) }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-sky-100 hover:bg-sky-800/40 font-body border-b border-sky-800/30 last:border-0"
-                      >
-                        {sug}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+         
+<div className="md:col-span-3 relative">
+  <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">From</label>
 
+  <div className="relative">
+    <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400 rotate-45" />
+
+    <input
+      type="text"
+      value={origin}
+      onChange={(e) => handleOriginChange(e.target.value)}
+      onFocus={() => setShowOriginSug(originSuggestions.length > 0)}
+      onBlur={() => setTimeout(() => setShowOriginSug(false), 150)}
+      placeholder="City or Airport"
+      className="input-airline pl-9"
+      required
+    />
+
+    {showOriginSug && (
+      <div className="absolute top-full left-0 right-0 mt-2 z-50 glass-dark border border-sky-500/20 rounded-xl shadow-2xl">
+        <AnimatedList
+          items={originSuggestions}
+          onItemSelect={(item, index) => {
+            setOrigin(`${item.city} (${item.code})`)
+            setShowOriginSug(false)
+          }}
+          displayScrollbar={false}
+          renderItem={(item: any, index) => (
+            <div className="flex items-center justify-between gap-3">
+              <span className="block text-sm font-semibold text-sky-100">{item.city}</span>
+              <span className="text-xs uppercase tracking-[0.18em] text-sky-300">{item.code}</span>
+            </div>
+          )}
+        />
+      </div>
+    )}
+  </div>
+</div>
           {/* Swap button */}
           <div className="md:col-span-1 flex items-end justify-center pb-0.5">
             <button
@@ -155,43 +155,44 @@ export default function FlightSearchWidget() {
           </div>
 
           {/* Destination */}
-          <div className="md:col-span-3 relative">
-            <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">To</label>
-            <div className="relative">
-              <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => handleDestChange(e.target.value)}
-                onFocus={() => setShowDestSug(destSuggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowDestSug(false), 200)}
-                placeholder="City or Airport"
-                className="input-airline pl-9"
-                required
-              />
-              <AnimatePresence>
-                {showDestSug && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50 shadow-2xl"
-                  >
-                    {destSuggestions.map((sug) => (
-                      <button
-                        key={sug}
-                        type="button"
-                        onMouseDown={() => { setDestination(sug); setShowDestSug(false) }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-sky-100 hover:bg-sky-800/40 font-body border-b border-sky-800/30 last:border-0"
-                      >
-                        {sug}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+        {/* Destination */}
+<div className="md:col-span-3 relative">
+  <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">To</label>
+
+  <div className="relative">
+    <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
+
+    <input
+      type="text"
+      value={destination}
+      onChange={(e) => handleDestChange(e.target.value)}
+      onFocus={() => setShowDestSug(destSuggestions.length > 0)}
+      onBlur={() => setTimeout(() => setShowDestSug(false), 150)}
+      placeholder="City or Airport"
+      className="input-airline pl-9"
+      required
+    />
+
+    {showDestSug && (
+      <div className="absolute top-full left-0 right-0 mt-2 z-50 glass-dark border border-sky-500/20 rounded-xl shadow-2xl">
+        <AnimatedList
+          items={destSuggestions}
+          onItemSelect={(item, index) => {
+            setDestination(`${item.city} (${item.code})`)
+            setShowDestSug(false)
+          }}
+          displayScrollbar={false}
+          renderItem={(item: any, index) => (
+            <div className="flex items-center justify-between gap-3">
+              <span className="block text-sm font-semibold text-sky-100">{item.city}</span>
+              <span className="text-xs uppercase tracking-[0.18em] text-sky-300">{item.code}</span>
             </div>
-          </div>
+          )}
+        />
+      </div>
+    )}
+  </div>
+</div>
 
           {/* Depart date */}
           <div className="md:col-span-2">

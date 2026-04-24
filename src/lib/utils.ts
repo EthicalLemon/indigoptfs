@@ -5,6 +5,7 @@ export const STATUS_LABELS: Record<FlightStatus, string> = {
   boarding: 'Boarding',
   departed: 'Departed',
   arrived: 'Arrived',
+  delayed: 'Delayed',
   cancelled: 'Cancelled',
 }
 
@@ -13,6 +14,7 @@ export const STATUS_COLORS: Record<FlightStatus, string> = {
   boarding: 'bg-yellow-500/10 text-yellow-400',
   departed: 'bg-blue-500/10 text-blue-400',
   arrived: 'bg-green-500/10 text-green-400',
+  delayed: 'bg-orange-500/10 text-orange-400',
   cancelled: 'bg-red-500/10 text-red-400',
 }
 
@@ -23,7 +25,7 @@ export type Airport = {
   name: string
 }
 
-export const AIRPORTS = {
+export const AIRPORTS: Record<string, Airport> = {
   DEL: { code: 'DEL', city: 'New Delhi', country: 'India', name: 'Indira Gandhi International Airport' },
   BOM: { code: 'BOM', city: 'Mumbai', country: 'India', name: 'Chhatrapati Shivaji Maharaj International Airport' },
   BLR: { code: 'BLR', city: 'Bangalore', country: 'India', name: 'Kempegowda International Airport' },
@@ -44,11 +46,44 @@ export const AIRPORTS = {
   NRT: { code: 'NRT', city: 'Tokyo', country: 'Japan', name: 'Narita International Airport' },
   SYD: { code: 'SYD', city: 'Sydney', country: 'Australia', name: 'Sydney Kingsford Smith Airport' },
   CDG: { code: 'CDG', city: 'Paris', country: 'France', name: 'Charles de Gaulle Airport' },
-} as const satisfies Record<string, Airport>
+}
 
-/* Optional helpers */
-export const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString()
+/* ✅ Helpers */
 
-export const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+export function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString()
+}
+
+export function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function formatDuration(minutes: number) {
+  const hrs = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return `${hrs}h ${mins}m`
+}
+
+export function formatPrice(amount: number, currency: string = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+export function generateBookingRef() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+export function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(' ')
+}
