@@ -4,18 +4,18 @@ export interface GlassSurfaceProps {
   children?: React.ReactNode;
   width?: number | string;
   height?: number | string;
-  borderRadius?: number;
-  borderWidth?: number;
-  brightness?: number;
-  opacity?: number;
-  blur?: number;
-  displace?: number;
-  backgroundOpacity?: number;
-  saturation?: number;
-  distortionScale?: number;
-  redOffset?: number;
-  greenOffset?: number;
-  blueOffset?: number;
+  borderRadius?: string | number;
+  borderWidth?: string | number;
+  brightness?: string | number;
+  opacity?: string | number;
+  blur?: number | string;
+  displace?: number | string;
+  backgroundOpacity?: number | string;
+  saturation?: number | string;
+  distortionScale?: number | string;
+  redOffset?: number | string;
+  greenOffset?: number | string;
+  blueOffset?: number | string;
   xChannel?: 'R' | 'G' | 'B';
   yChannel?: 'R' | 'G' | 'B';
   mixBlendMode?:
@@ -60,20 +60,20 @@ const useDarkMode = () => {
 
 const GlassSurface: React.FC<GlassSurfaceProps> = ({
   children,
-  width = 200,
-  height = 80,
-  borderRadius = 20,
-  borderWidth = 0.07,
-  brightness = 50,
-  opacity = 0.93,
-  blur = 11,
-  displace = 0,
-  backgroundOpacity = 0,
-  saturation = 1,
-  distortionScale = -180,
-  redOffset = 0,
-  greenOffset = 10,
-  blueOffset = 20,
+  width = '200',
+  height = '80',
+  borderRadius = '20',
+  borderWidth = '0.07',
+  brightness = '50',
+  opacity = '0.93',
+  blur = '11',
+  displace = '0',
+  backgroundOpacity = '0',
+  saturation = '1',
+  distortionScale = '-180',
+  redOffset = '0',
+  greenOffset = '10',
+  blueOffset = '20',
   xChannel = 'R',
   yChannel = 'G',
   mixBlendMode = 'difference',
@@ -100,7 +100,7 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     const rect = containerRef.current?.getBoundingClientRect();
     const actualWidth = rect?.width || 400;
     const actualHeight = rect?.height || 200;
-    const edgeSize = Math.min(actualWidth, actualHeight) * (borderWidth * 0.5);
+    const edgeSize = Math.min(actualWidth, actualHeight) * (Number(borderWidth) * 0.5);
 
     const svgContent = `
       <svg viewBox="0 0 ${actualWidth} ${actualHeight}" xmlns="http://www.w3.org/2000/svg">
@@ -136,13 +136,13 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
       { ref: blueChannelRef, offset: blueOffset }
     ].forEach(({ ref, offset }) => {
       if (ref.current) {
-        ref.current.setAttribute('scale', (distortionScale + offset).toString());
+        ref.current.setAttribute('scale', (Number(distortionScale) + Number(offset)).toString());
         ref.current.setAttribute('xChannelSelector', xChannel);
         ref.current.setAttribute('yChannelSelector', yChannel);
       }
     });
 
-    gaussianBlurRef.current?.setAttribute('stdDeviation', displace.toString());
+    gaussianBlurRef.current?.setAttribute('stdDeviation', Number(displace).toString());
   }, [
     width,
     height,
@@ -361,5 +361,6 @@ const GlassSurface: React.FC<GlassSurfaceProps> = ({
     </div>
   );
 };
+
 
 export default GlassSurface;

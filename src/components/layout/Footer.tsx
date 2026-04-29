@@ -83,7 +83,7 @@ export function Footer() {
               </h4>
               <ul className="flex flex-col gap-3">
                 {links.map(link => (
-                  <li key={link.href}>
+                  <li key={link.label}>
                     <Link
                       href={link.href}
                       className="text-sm transition-colors hover:text-indigo-400"
