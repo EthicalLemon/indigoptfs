@@ -1,10 +1,13 @@
 import type { FlightStatus } from '@/types'
 
+/* ───────── STATUS ───────── */
+
 export const STATUS_LABELS: Record<FlightStatus, string> = {
   scheduled: 'Scheduled',
   boarding: 'Boarding',
   departed: 'Departed',
   arrived: 'Arrived',
+  delayed: 'Delayed',
   cancelled: 'Cancelled',
 }
 
@@ -13,8 +16,11 @@ export const STATUS_COLORS: Record<FlightStatus, string> = {
   boarding: 'bg-yellow-500/10 text-yellow-400',
   departed: 'bg-blue-500/10 text-blue-400',
   arrived: 'bg-green-500/10 text-green-400',
+  delayed: 'bg-orange-500/10 text-orange-400',
   cancelled: 'bg-red-500/10 text-red-400',
 }
+
+/* ───────── AIRPORTS ───────── */
 
 export type Airport = {
   code: string
@@ -46,9 +52,28 @@ export const AIRPORTS = {
   CDG: { code: 'CDG', city: 'Paris', country: 'France', name: 'Charles de Gaulle Airport' },
 } as const satisfies Record<string, Airport>
 
-/* Optional helpers */
+/* ───────── FORMAT HELPERS ───────── */
+
 export const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString()
+  new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 
 export const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  new Date(iso).toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+
+export const formatDuration = (minutes: number) => {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${h}h ${m}m`
+}
+
+export const formatPrice = (n: number) => {
+  return `₹${Number(n).toLocaleString('en-IN')}`
+}

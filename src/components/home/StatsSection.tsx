@@ -4,6 +4,12 @@ import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import CardSwap, { Card } from '@/components/ui/CardSwap'
+import dynamic from 'next/dynamic'
+
+const MagicBento = dynamic(
+  () => import('@/components/MagicBento'),
+  { ssr: false }
+)
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Counter
@@ -230,8 +236,8 @@ function DestinationHero({ dest }: { dest: Destination }) {
 ───────────────────────────────────────────────────────────────────────────── */
 
 // Card dimensions — change these in ONE place and the container auto-sizes.
-const CARD_W            = 300   // px  — card width
-const CARD_H            = 380   // px  — card height
+const CARD_W            = 500   // px  — card width
+const CARD_H            = 600  // px  — card height
 const CARD_DISTANCE     = 28    // px  — rightward shift per slot
 const VERTICAL_DISTANCE = 14    // px  — upward shift per slot
 const N_CARDS           = DESTINATIONS.length  // 6
@@ -525,15 +531,6 @@ export function FleetPreview() {
 ───────────────────────────────────────────────────────────────────────────── */
 
 export function ServicesSection() {
-  const services = [
-    { icon: '🍽️', title: 'Gourmet Dining',  desc: 'Chef-crafted meals with regional specialties and dietary options for every passenger.'   },
-    { icon: '🎬', title: 'Entertainment',    desc: 'Thousands of movies, shows, music, and games on our award-winning IFE system.'           },
-    { icon: '🛋️', title: 'Premium Lounges', desc: 'Exclusive access to IndiGo Blue Lounges at 40+ airports worldwide.'                     },
-    { icon: '💼', title: 'Generous Baggage', desc: '30 kg checked baggage allowance on all flights, with extra for Premium travelers.'       },
-    { icon: '📶', title: 'In-flight WiFi',   desc: 'Stay connected at 35,000 feet with high-speed Ku-band satellite internet.'              },
-    { icon: '🌍', title: 'Loyalty Program',  desc: 'Earn IndiGo Miles on every flight and redeem for free flights, upgrades, and more.'     },
-  ]
-
   return (
     <section className="py-20 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
@@ -551,27 +548,23 @@ export function ServicesSection() {
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((s, i) => (
-            <motion.div
-              key={s.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="indigo-card p-6 group"
-            >
-              <div className="text-3xl mb-4">{s.icon}</div>
-              <h3 className="font-semibold text-base mb-2" style={{ color: 'var(--text-primary)' }}>{s.title}</h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{s.desc}</p>
-            </motion.div>
-          ))}
+        {/* 🔥 NEW BENTO UI */}
+        <div className="flex justify-center">
+          <MagicBento
+            enableStars
+            enableSpotlight
+            enableBorderGlow
+            enableTilt
+            clickEffect
+            enableMagnetism
+            glowColor="132, 0, 255"
+            particleCount={10}
+          />
         </div>
       </div>
     </section>
   )
 }
-
 /* ─────────────────────────────────────────────────────────────────────────────
    TestimonialsSection
 ───────────────────────────────────────────────────────────────────────────── */

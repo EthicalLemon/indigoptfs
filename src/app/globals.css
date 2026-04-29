@@ -7,7 +7,7 @@
 /* ================= THEME TOKENS ================= */
 
 :root {
-  --font-display: 'Cormorant Garamond', serif;
+  --font-display: ' ITC Bauhaus Medium', serif;
   --font-body: 'DM Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
@@ -29,9 +29,9 @@
 
 .dark {
   /* DARK MODE (deep, premium, not pitch black) */
-  --bg-primary: #0b1220;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1a2238;
+  --bg-primary: #00040a;
+  --bg-secondary: #010307;
+  --bg-tertiary: #01040c;
 
   --text-primary: #f9fafb;
   --text-secondary: #a1a7c4;

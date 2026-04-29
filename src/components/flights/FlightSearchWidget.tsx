@@ -4,19 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftRight, Calendar, Users, Search, Plane } from 'lucide-react'
-import { AIRPORTS } from '@/types'
-
-type TripType = 'oneway' | 'roundtrip'
+import { AIRPORTS } from '@/lib/utils'
 
 export default function FlightSearchWidget() {
   const router = useRouter()
-  const [tripType, setTripType] = useState<TripType>('oneway')
+
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
   const [departDate, setDepartDate] = useState('')
-  const [returnDate, setReturnDate] = useState('')
   const [passengers, setPassengers] = useState(1)
   const [seatClass, setSeatClass] = useState('economy')
+
   const [originSuggestions, setOriginSuggestions] = useState<string[]>([])
   const [destSuggestions, setDestSuggestions] = useState<string[]>([])
   const [showOriginSug, setShowOriginSug] = useState(false)
@@ -25,8 +23,9 @@ export default function FlightSearchWidget() {
   const airportList = Object.values(AIRPORTS)
 
   const filterAirports = (query: string) => {
-    if (!query || query.length < 1) return []
+    if (!query) return []
     const q = query.toUpperCase()
+
     return airportList
       .filter(a =>
         a.code.includes(q) ||
@@ -52,9 +51,8 @@ export default function FlightSearchWidget() {
   }
 
   const swapCities = () => {
-    const temp = origin
     setOrigin(destination)
-    setDestination(temp)
+    setDestination(origin)
   }
 
   const extractCode = (str: string) => {
@@ -64,19 +62,16 @@ export default function FlightSearchWidget() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!origin || !destination || !departDate) return
 
     const params = new URLSearchParams({
-      origin: extractCode(origin),
-      destination: extractCode(destination),
+      from: extractCode(origin),          // ✅ FIXED
+      to: extractCode(destination),       // ✅ FIXED
       date: departDate,
       passengers: passengers.toString(),
       class: seatClass,
     })
-
-    if (tripType === 'roundtrip' && returnDate) {
-      params.set('return', returnDate)
-    }
 
     router.push(`/flights?${params.toString()}`)
   }
@@ -85,54 +80,42 @@ export default function FlightSearchWidget() {
 
   return (
     <div className="glass border border-sky-500/20 rounded-3xl p-6 md:p-8 shadow-2xl">
-      {/* Trip type toggle */}
-      <div className="flex items-center gap-1 mb-6 p-1 glass-dark rounded-xl w-fit">
-        {(['oneway', 'roundtrip'] as TripType[]).map((type) => (
-          <button
-            key={type}
-            onClick={() => setTripType(type)}
-            className={`px-5 py-2.5 rounded-lg text-sm font-body font-medium transition-all duration-200 ${
-              tripType === type
-                ? 'bg-sky-600 text-white shadow-lg'
-                : 'text-sky-300/60 hover:text-sky-200'
-            }`}
-          >
-            {type === 'oneway' ? 'One Way' : 'Round Trip'}
-          </button>
-        ))}
-      </div>
 
       <form onSubmit={handleSearch}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
-          {/* Origin */}
-          <div className="md:col-span-3 relative">
-            <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">From</label>
+
+          {/* FROM */}
+          <div className="md:col-span-4 relative">
+            <label className="block text-xs text-sky-300/50 mb-2">From</label>
             <div className="relative">
               <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400 rotate-45" />
               <input
-                type="text"
                 value={origin}
                 onChange={(e) => handleOriginChange(e.target.value)}
                 onFocus={() => setShowOriginSug(originSuggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowOriginSug(false), 200)}
+                onBlur={() => setTimeout(() => setShowOriginSug(false), 150)}
                 placeholder="City or Airport"
                 className="input-airline pl-9"
                 required
               />
+
               <AnimatePresence>
                 {showOriginSug && (
                   <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50 shadow-2xl"
+                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50"
                   >
                     {originSuggestions.map((sug) => (
                       <button
                         key={sug}
                         type="button"
-                        onMouseDown={() => { setOrigin(sug); setShowOriginSug(false) }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-sky-100 hover:bg-sky-800/40 font-body border-b border-sky-800/30 last:border-0"
+                        onMouseDown={() => {
+                          setOrigin(sug)
+                          setShowOriginSug(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-sky-800/40"
                       >
                         {sug}
                       </button>
@@ -143,46 +126,45 @@ export default function FlightSearchWidget() {
             </div>
           </div>
 
-          {/* Swap button */}
-          <div className="md:col-span-1 flex items-end justify-center pb-0.5">
-            <button
-              type="button"
-              onClick={swapCities}
-              className="w-10 h-10 glass border border-sky-500/20 rounded-full flex items-center justify-center text-sky-300 hover:text-white hover:border-sky-400/40 transition-all duration-200 group"
-            >
-              <ArrowLeftRight size={14} className="group-hover:rotate-180 transition-transform duration-300" />
+          {/* SWAP */}
+          <div className="md:col-span-1 flex items-end justify-center">
+            <button type="button" onClick={swapCities} className="swap-btn">
+              <ArrowLeftRight size={14} />
             </button>
           </div>
 
-          {/* Destination */}
-          <div className="md:col-span-3 relative">
-            <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">To</label>
+          {/* TO */}
+          <div className="md:col-span-4 relative">
+            <label className="block text-xs text-sky-300/50 mb-2">To</label>
             <div className="relative">
               <Plane size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
               <input
-                type="text"
                 value={destination}
                 onChange={(e) => handleDestChange(e.target.value)}
                 onFocus={() => setShowDestSug(destSuggestions.length > 0)}
-                onBlur={() => setTimeout(() => setShowDestSug(false), 200)}
+                onBlur={() => setTimeout(() => setShowDestSug(false), 150)}
                 placeholder="City or Airport"
                 className="input-airline pl-9"
                 required
               />
+
               <AnimatePresence>
                 {showDestSug && (
                   <motion.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
-                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50 shadow-2xl"
+                    className="absolute top-full left-0 right-0 mt-1 glass-dark border border-sky-500/20 rounded-xl overflow-hidden z-50"
                   >
                     {destSuggestions.map((sug) => (
                       <button
                         key={sug}
                         type="button"
-                        onMouseDown={() => { setDestination(sug); setShowDestSug(false) }}
-                        className="w-full text-left px-4 py-2.5 text-sm text-sky-100 hover:bg-sky-800/40 font-body border-b border-sky-800/30 last:border-0"
+                        onMouseDown={() => {
+                          setDestination(sug)
+                          setShowDestSug(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm hover:bg-sky-800/40"
                       >
                         {sug}
                       </button>
@@ -193,9 +175,9 @@ export default function FlightSearchWidget() {
             </div>
           </div>
 
-          {/* Depart date */}
-          <div className="md:col-span-2">
-            <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">Depart</label>
+          {/* DATE */}
+          <div className="md:col-span-3">
+            <label className="block text-xs text-sky-300/50 mb-2">Depart</label>
             <div className="relative">
               <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
               <input
@@ -209,67 +191,38 @@ export default function FlightSearchWidget() {
             </div>
           </div>
 
-          {/* Return date */}
-          <AnimatePresence>
-            {tripType === 'roundtrip' && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="md:col-span-2 overflow-hidden"
-              >
-                <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">Return</label>
-                <div className="relative">
-                  <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-400" />
-                  <input
-                    type="date"
-                    value={returnDate}
-                    min={departDate || today}
-                    onChange={(e) => setReturnDate(e.target.value)}
-                    className="input-airline pl-9"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* PASSENGERS + CLASS */}
+          <div className="md:col-span-3 grid grid-cols-2 gap-2">
+            <div className="relative">
+              <Users size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-sky-400" />
+              <input
+                type="number"
+                value={passengers}
+                min={1}
+                max={9}
+                onChange={(e) => setPassengers(Number(e.target.value))}
+                className="input-airline pl-7"
+              />
+            </div>
 
-          {/* Passengers & Class */}
-          <div className={`md:col-span-${tripType === 'roundtrip' ? '1' : '2'} grid grid-cols-2 gap-2`}>
-            <div>
-              <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">Pax</label>
-              <div className="relative">
-                <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-sky-400" />
-                <input
-                  type="number"
-                  value={passengers}
-                  min={1}
-                  max={9}
-                  onChange={(e) => setPassengers(parseInt(e.target.value))}
-                  className="input-airline pl-8"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-sky-300/50 font-body uppercase tracking-wider mb-2">Class</label>
-              <select
-                value={seatClass}
-                onChange={(e) => setSeatClass(e.target.value)}
-                className="input-airline appearance-none"
-              >
-                <option value="economy">Economy</option>
-                <option value="business">Business</option>
-                <option value="first_class">First</option>
-              </select>
-            </div>
+            <select
+              value={seatClass}
+              onChange={(e) => setSeatClass(e.target.value)}
+              className="input-airline"
+            >
+              <option value="economy">Economy</option>
+              <option value="business">Business</option>
+              <option value="first">First</option>
+            </select>
           </div>
+
         </div>
 
-        {/* Search button */}
+        {/* SEARCH BUTTON */}
         <motion.button
           type="submit"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full md:w-auto px-12 py-4 btn-gold rounded-2xl font-body text-base font-bold flex items-center justify-center gap-2 shadow-glow-gold"
+          whileTap={{ scale: 0.97 }}
+          className="btn-gold w-full flex items-center justify-center gap-2"
         >
           <Search size={18} />
           Search Flights

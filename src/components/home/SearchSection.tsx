@@ -7,12 +7,9 @@ import { Plane, Calendar, ArrowLeftRight, Search } from 'lucide-react'
 import { AIRPORTS } from '@/lib/utils'
 import { format } from 'date-fns'
 
-type TripType = 'one-way' | 'round-trip'
-
 export function SearchSection() {
   const router = useRouter()
 
-  const [tripType, setTripType] = useState<TripType>('one-way')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -49,23 +46,6 @@ export function SearchSection() {
           className="rounded-2xl bg-[#0b1220] border border-white/10 p-6 md:p-8 shadow-[0_20px_80px_rgba(0,0,0,0.4)]"
         >
 
-          {/* Trip Tabs */}
-          <div className="flex gap-2 mb-8">
-            {(['one-way', 'round-trip'] as TripType[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setTripType(t)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${
-                  tripType === t
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
           {/* FORM */}
           <form onSubmit={search}>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
@@ -76,10 +56,7 @@ export function SearchSection() {
                   From
                 </label>
                 <div className="relative">
-                  <Plane
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 -rotate-45 text-indigo-400"
-                  />
+                  <Plane size={16} className="absolute left-4 top-1/2 -translate-y-1/2 -rotate-45 text-indigo-400" />
                   <select
                     value={from}
                     onChange={e => setFrom(e.target.value)}
@@ -113,10 +90,7 @@ export function SearchSection() {
                   To
                 </label>
                 <div className="relative">
-                  <Plane
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 rotate-45 text-indigo-400"
-                  />
+                  <Plane size={16} className="absolute left-4 top-1/2 -translate-y-1/2 rotate-45 text-indigo-400" />
                   <select
                     value={to}
                     onChange={e => setTo(e.target.value)}
@@ -139,10 +113,7 @@ export function SearchSection() {
                   Date
                 </label>
                 <div className="relative">
-                  <Calendar
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400"
-                  />
+                  <Calendar size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-400" />
                   <input
                     type="date"
                     value={date}
@@ -153,7 +124,7 @@ export function SearchSection() {
                 </div>
               </div>
 
-              {/* SEARCH BUTTON */}
+              {/* SEARCH */}
               <div className="md:col-span-3 flex items-end">
                 <button
                   type="submit"
@@ -163,9 +134,9 @@ export function SearchSection() {
                   Search Flights
                 </button>
               </div>
+
             </div>
 
-            {/* FOOT NOTE */}
             <p className="mt-4 text-xs text-gray-500">
               ✈ 120+ destinations worldwide • Best price guarantee
             </p>
