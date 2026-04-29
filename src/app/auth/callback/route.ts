@@ -11,8 +11,6 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // Upsert profile for Discord users
-      // Discord gives us: identity_data.full_name, identity_data.avatar_url, identity_data.custom_claims.global_name
       const identity = data.user.identities?.find(i => i.provider === 'discord')
       const discordMeta = identity?.identity_data
 
@@ -26,18 +24,29 @@ export async function GET(request: NextRequest) {
         profileUpdate.full_name = discordMeta.custom_claims.global_name
       }
 
-      // Upsert profile (trigger should handle it but ensure it exists)
-      await supabase.from('profiles').upsert({
-        id:   data.user.id,
-        ...profileUpdate,
-        role: 'user', // default role — admins must manually upgrade in DB
-      }, { onConflict: 'id', ignoreDuplicates: false })
+      // Check if profile already exists to preserve existing role
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('id', data.user.id)
+        .maybeSingle()
+
+      if (!existing) {
+        // New user — insert with default role
+        await supabase.from('profiles').insert({
+          id:   data.user.id,
+          ...profileUpdate,
+          role: 'user',
+        })
+      } else {
+        // Existing user — update metadata but never overwrite role
+        await supabase.from('profiles').update(profileUpdate).eq('id', data.user.id)
+      }
 
       const redirectUrl = new URL(next.startsWith('/') ? next : '/', origin)
       return NextResponse.redirect(redirectUrl)
     }
   }
 
-  // Auth failed — redirect to login with error
   return NextResponse.redirect(new URL('/auth/login?error=oauth_failed', origin))
 }
