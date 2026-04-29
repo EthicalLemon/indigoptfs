@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
+
+// ✅ FIX: client.ts exports createClient(), not a named `supabase` instance.
+// Call createClient() inside the async function instead.
 
 type Profile = {
   id: string
@@ -16,6 +19,7 @@ export default function StaffPortal({ initialProfile }: { initialProfile: Profil
   const router = useRouter()
 
   async function handleLogout() {
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
