@@ -4,11 +4,12 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 // Service-role client — bypasses RLS, used for wallet deduction + DM sending
-// This is safe because this is a server-only route
 const serviceSupabase = createServiceClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+type SeatClass = 'economy' | 'business' | 'first' // ✅ FIX ADDED
 
 function generateRef() {
   return 'IGO' + Math.random().toString(36).substring(2, 8).toUpperCase()
@@ -18,7 +19,6 @@ export async function POST(req: Request) {
   try {
     const cookieStore = cookies()
 
-    // Anon client just to verify the session cookie
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -35,7 +35,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
     }
 
-    const { flight_id, seat_class, passenger } = await req.json()
+    // ✅ FIX: strongly type request body
+    const body = await req.json() as {
+      flight_id: string
+      seat_class: SeatClass
+      passenger: {
+        first_name: string
+        last_name: string
+        email: string
+      }
+    }
+
+    const { flight_id, seat_class, passenger } = body
+
     if (!flight_id || !seat_class || !passenger) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
@@ -51,12 +63,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Flight not found' }, { status: 404 })
     }
 
-    const priceMap: Record<string, number> = {
+    const priceMap: Record<SeatClass, number> = {
       economy:  flight.price_economy,
       business: flight.price_business,
       first:    flight.price_first,
     }
-    const basePrice = priceMap[seat_class] ?? 0
+
+    const basePrice = priceMap[seat_class]
     const tax       = Math.round(basePrice * 0.18)
     const total     = basePrice + tax
 
@@ -71,14 +84,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // ── 3. Fetch wallet (separate wallets table) ───────────────────────────
+    // ── 3. Fetch wallet ────────────────────────────────────────────────────
     let { data: wallet } = await serviceSupabase
       .from('wallets')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle()
 
-    // Auto-create wallet if missing
     if (!wallet) {
       const { data: newWallet } = await serviceSupabase
         .from('wallets')
@@ -96,9 +108,10 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // ── 4. Check seat availability ─────────────────────────────────────────
-    const totalSeats  = flight[`seats_${seat_class}`]          as number
-    const bookedSeats = flight[`seats_${seat_class}_booked`]   as number
+    // ── 4. Seat availability ───────────────────────────────────────────────
+    const totalSeats  = flight[`seats_${seat_class}`] as number
+    const bookedSeats = flight[`seats_${seat_class}_booked`] as number
+
     if (bookedSeats >= totalSeats) {
       return NextResponse.json({ error: 'No seats available in this class' }, { status: 400 })
     }
@@ -115,7 +128,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Wallet deduction failed' }, { status: 500 })
     }
 
-    // ── 6. Log wallet transaction ──────────────────────────────────────────
+    // ── 6. Log transaction ─────────────────────────────────────────────────
     await serviceSupabase.from('wallet_transactions').insert({
       user_id:     user.id,
       amount:      -total,
@@ -141,8 +154,11 @@ export async function POST(req: Request) {
       .single()
 
     if (bookingErr) {
-      // Refund wallet if booking insert fails
-      await serviceSupabase.from('wallets').update({ balance: wallet.balance }).eq('user_id', user.id)
+      await serviceSupabase
+        .from('wallets')
+        .update({ balance: wallet.balance })
+        .eq('user_id', user.id)
+
       return NextResponse.json({ error: 'Booking failed: ' + bookingErr.message }, { status: 500 })
     }
 
@@ -155,19 +171,19 @@ export async function POST(req: Request) {
     // ── 9. Send Discord DM ─────────────────────────────────────────────────
     if (profile.discord_id) {
       try {
-        type SeatClass = 'economy' | 'business' | 'first'
+        const classMap: Record<SeatClass, string> = {
+          economy: 'Economy',
+          business: 'Business',
+          first: 'First Class'
+        }
 
-const classMap: Record<SeatClass, string> = {
-  economy: 'Economy',
-  business: 'Business',
-  first: 'First Class'
-}
+        const classLabel = classMap[seat_class]
 
-const classLabel = classMap[seat_class as SeatClass] ?? seat_class
         const depDate = new Date(flight.departure_time).toLocaleString('en-IN', {
           weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
           hour: '2-digit', minute: '2-digit', hour12: false,
         })
+
         const arrDate = new Date(flight.arrival_time).toLocaleString('en-IN', {
           hour: '2-digit', minute: '2-digit', hour12: false,
         })
@@ -188,16 +204,16 @@ const classLabel = classMap[seat_class as SeatClass] ?? seat_class
             title: '🎫  Boarding Pass — IndiGo Airlines',
             description: `Your booking is **confirmed**! See you on board.`,
             fields: [
-              { name: '✈️  Flight',        value: `**${flight.flight_number}**`,                                inline: true },
-              { name: '💺  Class',          value: classLabel,                                                   inline: true },
-              { name: '🎫  Booking Ref',    value: `\`${bookingRef}\``,                                          inline: true },
-              { name: '🛫  Departure',      value: `**${flight.departure_city} (${flight.departure_code})**\n${depDate}`, inline: true },
-              { name: '🛬  Arrival',        value: `**${flight.arrival_city} (${flight.arrival_code})**\n${arrDate}`,     inline: true },
-              { name: '🚪  Gate',           value: flight.gate     || 'TBA',                                    inline: true },
-              { name: '🏢  Terminal',       value: flight.terminal || 'TBA',                                    inline: true },
-              { name: '👤  Passenger',      value: `${passenger.first_name} ${passenger.last_name}`,             inline: true },
-              { name: '💰  Amount Paid',    value: `₹${total.toLocaleString('en-IN')}`,                         inline: true },
-              { name: '📊  Wallet Balance', value: `₹${newBalance.toLocaleString('en-IN')} remaining`,          inline: false },
+              { name: '✈️  Flight', value: `**${flight.flight_number}**`, inline: true },
+              { name: '💺  Class', value: classLabel, inline: true },
+              { name: '🎫  Booking Ref', value: `\`${bookingRef}\``, inline: true },
+              { name: '🛫  Departure', value: `**${flight.departure_city} (${flight.departure_code})**\n${depDate}`, inline: true },
+              { name: '🛬  Arrival', value: `**${flight.arrival_city} (${flight.arrival_code})**\n${arrDate}`, inline: true },
+              { name: '🚪  Gate', value: flight.gate || 'TBA', inline: true },
+              { name: '🏢  Terminal', value: flight.terminal || 'TBA', inline: true },
+              { name: '👤  Passenger', value: `${passenger.first_name} ${passenger.last_name}`, inline: true },
+              { name: '💰  Amount Paid', value: `₹${total.toLocaleString('en-IN')}`, inline: true },
+              { name: '📊  Wallet Balance', value: `₹${newBalance.toLocaleString('en-IN')} remaining`, inline: false },
             ],
             footer: { text: 'IndiGo Airlines • Please arrive 2 hours before departure' },
             timestamp: new Date().toISOString(),
@@ -213,17 +229,15 @@ const classLabel = classMap[seat_class as SeatClass] ?? seat_class
           })
         })
       } catch (dmErr) {
-        // DM failure is non-fatal — booking already succeeded
         console.warn('Discord DM failed:', dmErr)
       }
     }
 
-    // ── 10. Return success ─────────────────────────────────────────────────
     return NextResponse.json({
-      success:     true,
+      success: true,
       booking_ref: bookingRef,
       new_balance: newBalance,
-      total_paid:  total,
+      total_paid: total,
     })
 
   } catch (err: any) {
