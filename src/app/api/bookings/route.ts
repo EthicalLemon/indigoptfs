@@ -18,7 +18,6 @@ export async function POST(req: Request) {
   try {
     const cookieStore = cookies()
 
-    // Anon client just to verify the session cookie
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -35,7 +34,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Not logged in' }, { status: 401 })
     }
 
-    const { flight_id, seat_class, passenger } = await req.json()
+    // ✅ FIX APPLIED HERE
+    const { flight_id, seat_class: rawSeatClass, passenger } = await req.json()
+
+    type SeatClass = 'economy' | 'business' | 'first'
+    const seat_class = rawSeatClass as SeatClass
+
     if (!flight_id || !seat_class || !passenger) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
@@ -56,11 +60,12 @@ export async function POST(req: Request) {
       business: flight.price_business,
       first:    flight.price_first,
     }
+
     const basePrice = priceMap[seat_class] ?? 0
     const tax       = Math.round(basePrice * 0.18)
     const total     = basePrice + tax
 
-    // ── 2. Fetch profile + discord_id ──────────────────────────────────────
+    // ── 2. Fetch profile ───────────────────────────────────────────────────
     const { data: profile, error: profileErr } = await serviceSupabase
       .from('profiles')
       .select('id, full_name, email, discord_id')
@@ -71,14 +76,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // ── 3. Fetch wallet (separate wallets table) ───────────────────────────
+    // ── 3. Wallet ──────────────────────────────────────────────────────────
     let { data: wallet } = await serviceSupabase
       .from('wallets')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle()
 
-    // Auto-create wallet if missing
     if (!wallet) {
       const { data: newWallet } = await serviceSupabase
         .from('wallets')
@@ -96,9 +100,10 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // ── 4. Check seat availability ─────────────────────────────────────────
-    const totalSeats  = flight[`seats_${seat_class}`]          as number
-    const bookedSeats = flight[`seats_${seat_class}_booked`]   as number
+    // ── 4. Seat availability ───────────────────────────────────────────────
+    const totalSeats  = flight[`seats_${seat_class}`] as number
+    const bookedSeats = flight[`seats_${seat_class}_booked`] as number
+
     if (bookedSeats >= totalSeats) {
       return NextResponse.json({ error: 'No seats available in this class' }, { status: 400 })
     }
@@ -115,47 +120,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Wallet deduction failed' }, { status: 500 })
     }
 
-    // ── 6. Log wallet transaction ──────────────────────────────────────────
+    // ── 6. Log transaction ─────────────────────────────────────────────────
     await serviceSupabase.from('wallet_transactions').insert({
-      user_id:     user.id,
-      amount:      -total,
-      type:        'spend',
+      user_id: user.id,
+      amount: -total,
+      type: 'spend',
       description: `✈️ Flight booking ${flight.flight_number} (${seat_class}) — ${flight.departure_code} → ${flight.arrival_code}`,
     })
 
-    // ── 7. Create booking ──────────────────────────────────────────────────
+    // ── 7. Booking ─────────────────────────────────────────────────────────
     const bookingRef = generateRef()
 
     const { data: booking, error: bookingErr } = await serviceSupabase
       .from('bookings')
       .insert({
         booking_ref: bookingRef,
-        user_id:     user.id,
+        user_id: user.id,
         flight_id,
         seat_class,
-        passengers:  [passenger],
+        passengers: [passenger],
         total_price: total,
-        status:      'confirmed',
+        status: 'confirmed',
       })
       .select()
       .single()
 
     if (bookingErr) {
-      // Refund wallet if booking insert fails
       await serviceSupabase.from('wallets').update({ balance: wallet.balance }).eq('user_id', user.id)
       return NextResponse.json({ error: 'Booking failed: ' + bookingErr.message }, { status: 500 })
     }
 
-    // ── 8. Increment seat count ────────────────────────────────────────────
+    // ── 8. Increment seats ─────────────────────────────────────────────────
     await serviceSupabase
       .from('flights')
       .update({ [`seats_${seat_class}_booked`]: bookedSeats + 1 })
       .eq('id', flight_id)
 
-    // ── 9. Send Discord DM ─────────────────────────────────────────────────
+    // ── 9. Discord DM ──────────────────────────────────────────────────────
     if (profile.discord_id) {
       try {
-        // ✅ FIXED LINE (no TS error anymore)
         const classLabel =
           seat_class === 'economy' ? 'Economy' :
           seat_class === 'business' ? 'Business' :
@@ -166,6 +169,7 @@ export async function POST(req: Request) {
           weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
           hour: '2-digit', minute: '2-digit', hour12: false,
         })
+
         const arrDate = new Date(flight.arrival_time).toLocaleString('en-IN', {
           hour: '2-digit', minute: '2-digit', hour12: false,
         })
@@ -215,12 +219,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── 10. Return success ─────────────────────────────────────────────────
     return NextResponse.json({
-      success:     true,
+      success: true,
       booking_ref: bookingRef,
       new_balance: newBalance,
-      total_paid:  total,
+      total_paid: total,
     })
 
   } catch (err: any) {
