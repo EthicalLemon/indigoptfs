@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default async function BookingPage({ params, searchParams }: Props) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
