@@ -149,8 +149,11 @@ export default function WalletModal({ userId, onClose }: Props) {
 
           {/* ── Quick stats ── */}
           <div
-            className="grid grid-cols-3 divide-x"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', divideColor: 'rgba(255,255,255,0.06)' }}
+           className="grid grid-cols-3 divide-x border-b"
+style={{ 
+  borderBottom: '1px solid rgba(255,255,255,0.06)',
+  borderColor: 'rgba(255,255,255,0.06)'
+}}
           >
             {[
               { label: 'Earned',  value: `₹${transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}` },
