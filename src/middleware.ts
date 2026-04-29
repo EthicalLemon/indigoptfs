@@ -1,9 +1,12 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
+import { middleware as supabaseMiddleware } from '@/lib/supabase/middleware'
 
 export function middleware(request: NextRequest) {
-  return NextResponse.next()
+  return supabaseMiddleware(request)
 }
 
 export const config = {
-  matcher: ['/staff/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

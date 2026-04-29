@@ -19,9 +19,3 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 }
 
 
-export const metadata = {
-  title: 'IndiGo PTFS',
-  icons: {
-    icon: 'public/planes/logo.jpg',
-  },
-}

@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Plane, Users, Calendar, TrendingUp, Clock, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import type { Flight, Profile } from '@/types'
 import { formatTime, formatDate, STATUS_COLORS, STATUS_LABELS } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 export function StaffDashboardStats({ profile }: { profile: Profile }) {
   const [stats, setStats] = useState({ flights: 0, bookings: 0, users: 0, revenue: 0 })
@@ -13,7 +13,7 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
 
   useEffect(() => {
     const load = async () => {
-      const sb = createClient()
+      const supabase = createClient()
       const [
         { count: flightCount },
         { count: bookingCount },

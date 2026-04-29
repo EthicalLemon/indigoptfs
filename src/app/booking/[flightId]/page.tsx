@@ -6,11 +6,14 @@ import { formatTime, formatDate, formatDuration } from '@/lib/utils'
 import BookingForm from './BookingForm'
 
 interface Props {
-  params: { flightId: string }
-  searchParams: { class?: string }
+  params: Promise<{ flightId: string }>
+  searchParams: Promise<{ class?: string }>
 }
 
 export default async function BookingPage({ params, searchParams }: Props) {
+  const { flightId } = await params
+  const { class: seatClass } = await searchParams
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,7 +22,7 @@ export default async function BookingPage({ params, searchParams }: Props) {
   const { data: flight, error } = await supabase
     .from('flights')
     .select('*')
-    .eq('id', params.flightId)
+    .eq('id', flightId)
     .single()
 
   if (error || !flight) {
@@ -44,7 +47,7 @@ export default async function BookingPage({ params, searchParams }: Props) {
     .eq('user_id', user.id)
     .maybeSingle()
 
-  const defaultClass = (searchParams.class as 'economy' | 'business' | 'first') || 'economy'
+  const defaultClass = (seatClass as 'economy' | 'business' | 'first') || 'economy'
 
   const prices = {
     economy: flight.price_economy,
