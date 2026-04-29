@@ -159,9 +159,11 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge text-xs ${STATUS_COLORS[flight.status]}`}>
-                        {STATUS_LABELS[flight.status]}
-                      </span>
+                      const status = flight.status as keyof typeof STATUS_COLORS
+
+<span className={`status-badge text-xs ${STATUS_COLORS[status]}`}>
+  {STATUS_LABELS[status]}
+</span>
                     </td>
                     <td>
                       <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
