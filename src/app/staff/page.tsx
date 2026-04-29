@@ -5,23 +5,22 @@ import StaffDashboardClient from './StaffDashboardClient'
 export const dynamic = 'force-dynamic'
 
 export default async function StaffPage() {
-  const supabase = createClient()
+  // ✅ FIX 1: await createClient() for Next.js 15
+  const supabase = await createClient()
 
-  // Server-side auth check — this never gets stuck
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect('/auth/login?redirectTo=/staff')
   }
 
-  // Fetch profile with role
+  // ✅ FIX 2: include created_at in select so the Profile type is satisfied
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, avatar_url')
+    .select('id, email, full_name, role, avatar_url, created_at')
     .eq('id', user.id)
     .single()
 
-  // If profile doesn't exist yet (e.g. new Discord OAuth user), create it
   if (!profile) {
     await supabase.from('profiles').upsert({
       id:        user.id,
@@ -34,11 +33,9 @@ export default async function StaffPage() {
 
   const allowedRoles = ['admin', 'staff', 'host']
   if (!allowedRoles.includes(profile.role)) {
-    // Not a staff member — show access denied page
     return <AccessDenied email={profile.email} role={profile.role} />
   }
 
-  // Pass profile to client component
   return <StaffDashboardClient profile={profile} />
 }
 
