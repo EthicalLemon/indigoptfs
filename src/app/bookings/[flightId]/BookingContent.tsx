@@ -5,8 +5,9 @@ import { CheckCircle2, Plane, Calendar, User, CreditCard, ArrowLeft } from 'luci
 
 export const dynamic = 'force-dynamic'
 
+// ✅ FIX: In Next.js 15, params is a Promise — must be typed and awaited
 interface Props {
-  params: { flightId: string } // ✅ FIXED
+  params: Promise<{ flightId: string }>
 }
 
 export default async function BookingConfirmationPage({ params }: Props) {
@@ -15,14 +16,13 @@ export default async function BookingConfirmationPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  // ✅ SAFE param extraction
-  const bookingId = params?.flightId
+  // ✅ FIX: Await params before accessing its properties
+  const { flightId: bookingId } = await params
 
   if (!bookingId) {
     redirect('/bookings')
   }
 
-  // ✅ FETCH booking
   const { data: booking, error } = await supabase
     .from('bookings')
     .select(`
@@ -41,7 +41,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
         status
       )
     `)
-    .eq('id', bookingId) // ✅ FIXED
+    .eq('id', bookingId)
     .eq('user_id', user.id)
     .single()
 
@@ -52,7 +52,7 @@ export default async function BookingConfirmationPage({ params }: Props) {
           <div className="text-5xl mb-4">🔍</div>
           <h1 className="text-xl font-bold text-white mb-2">Booking Not Found</h1>
           <p className="text-white/50 text-sm mb-6">
-            This booking doesn't exist or doesn't belong to your account.
+            This booking doesn&apos;t exist or doesn&apos;t belong to your account.
           </p>
           <Link
             href="/"
@@ -68,7 +68,6 @@ export default async function BookingConfirmationPage({ params }: Props) {
   const flight = booking.flight ?? {}
   const passenger = booking.passengers?.[0] ?? {}
 
-  // ✅ STABLE formatters (no hydration issues)
   const formatDateTime = (iso?: string) => {
     if (!iso) return '—'
     return new Date(iso).toLocaleString('en-IN', {

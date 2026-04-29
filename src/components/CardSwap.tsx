@@ -1,3 +1,4 @@
+'use client'
 import React, {
   Children,
   cloneElement,
@@ -11,7 +12,6 @@ import React, {
   useRef
 } from 'react';
 import gsap from 'gsap';
-import './CardSwap.css';
 
 export interface CardSwapProps {
   width?: number | string;
