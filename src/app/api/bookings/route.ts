@@ -55,11 +55,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Flight not found' }, { status: 404 })
     }
 
-    const priceMap: Record<string, number> = {
-      economy:  flight.price_economy,
-      business: flight.price_business,
-      first:    flight.price_first,
-    }
+    const priceMap: Record<SeatClass, number> = {
+  economy:  flight.price_economy,
+  business: flight.price_business,
+  first:    flight.price_first,
+}
 
     const basePrice = priceMap[seat_class] ?? 0
     const tax       = Math.round(basePrice * 0.18)
