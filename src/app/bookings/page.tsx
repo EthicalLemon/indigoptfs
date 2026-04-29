@@ -45,85 +45,47 @@ export default async function BookingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07070f]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="min-h-screen bg-[#07070f]">
       <div className="max-w-2xl mx-auto px-4 py-12">
 
         <h1 className="text-2xl font-bold text-white mb-2">My Bookings</h1>
-        <p className="text-white/40 text-sm mb-8">All your confirmed flight bookings</p>
 
         {!bookings || bookings.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="text-5xl mb-4">✈️</div>
-            <h2 className="text-white font-semibold mb-2">No bookings yet</h2>
-            <p className="text-white/40 text-sm mb-6">Book your first flight to get started.</p>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors"
-            >
-              Browse Flights
-            </Link>
-          </div>
+          <div className="text-white">No bookings</div>
         ) : (
           <div className="flex flex-col gap-3">
             {bookings.map((b) => {
-              // ✅ FIX: handle array vs object
+              
+              // ✅ FIX: handle array relation
               const flight = Array.isArray(b.flight) ? b.flight[0] : b.flight
 
               return (
-                <Link
-                  key={b.id}
-                  href={`/bookings/${b.id}`}
-                  className="group p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/8 hover:border-white/20 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-mono font-bold text-white tracking-wide">
-                      {b.booking_ref}
-                    </span>
-                    <span className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
-                      {classLabel[b.seat_class] ?? b.seat_class}
-                    </span>
+                <Link key={b.id} href={`/bookings/${b.id}`} className="p-4 border rounded">
+
+                  <div className="flex justify-between mb-2">
+                    <span>{b.booking_ref}</span>
+                    <span>{classLabel[b.seat_class] ?? b.seat_class}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-3">
                     <div>
-                      <div className="text-white text-xl font-semibold">
-                        {flight?.departure_code}
-                      </div>
-                      <div className="text-white/40 text-xs">
-                        {flight?.departure_city}
-                      </div>
+                      <div>{flight?.departure_code ?? '—'}</div>
+                      <div>{flight?.departure_city ?? ''}</div>
                     </div>
 
-                    <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 h-px bg-white/10" />
-                      <Plane size={14} className="text-white/30" />
-                      <div className="flex-1 h-px bg-white/10" />
-                    </div>
+                    <Plane size={14} />
 
-                    <div className="text-right">
-                      <div className="text-white text-xl font-semibold">
-                        {flight?.arrival_code}
-                      </div>
-                      <div className="text-white/40 text-xs">
-                        {flight?.arrival_city}
-                      </div>
+                    <div>
+                      <div>{flight?.arrival_code ?? '—'}</div>
+                      <div>{flight?.arrival_city ?? ''}</div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="text-white/40 text-xs">
-                      {formatDate(flight?.departure_time)}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-white font-medium text-sm">
-                        ₹{Number(b.total_price).toLocaleString('en-IN')}
-                      </span>
-                      <ArrowRight
-                        size={14}
-                        className="text-white/30 group-hover:text-white/60 transition-colors"
-                      />
-                    </div>
+                  <div className="flex justify-between mt-2">
+                    <div>{formatDate(flight?.departure_time)}</div>
+                    <div>₹{Number(b.total_price).toLocaleString('en-IN')}</div>
                   </div>
+
                 </Link>
               )
             })}
