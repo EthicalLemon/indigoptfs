@@ -46,7 +46,11 @@ export default function FlightsContent() {
   const sorted = [...flights]
     .filter(f => {
       const price = Math.min(f.price_economy, f.price_business, f.price_first)
-      return price <= maxPrice
+      // ✅ FIX: actually apply the classFilter that was being ignored before
+      const classOk =
+        classFilter === 'all' ||
+        (f[`seats_${classFilter}` as keyof Flight] as number) > 0
+      return price <= maxPrice && classOk
     })
     .sort((a, b) => {
       if (sortBy === 'price') return a.price_economy - b.price_economy

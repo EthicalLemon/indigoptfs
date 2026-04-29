@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, Plane } from 'lucide-react'
+import { Plane } from 'lucide-react'
 
 export default async function BookingsPage() {
-  const supabase = createClient()
+  // ✅ FIX: createClient() must be awaited in Next.js 15
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
@@ -55,8 +56,8 @@ export default async function BookingsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {bookings.map((b) => {
-              
-              // ✅ FIX: handle array relation
+
+              // handle array relation
               const flight = Array.isArray(b.flight) ? b.flight[0] : b.flight
 
               return (

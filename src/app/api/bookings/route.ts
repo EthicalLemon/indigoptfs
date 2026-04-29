@@ -14,7 +14,8 @@ function generateRef() {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies()
+    // ✅ FIX: cookies() must be awaited in Next.js 15
+    const cookieStore = await cookies()
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +42,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    // ✅ FIXED: include flightErr
     const { data: flight, error: flightErr } = await supabase
       .from('flights')
       .select('*')
