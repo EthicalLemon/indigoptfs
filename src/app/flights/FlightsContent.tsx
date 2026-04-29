@@ -68,7 +68,7 @@ export default function FlightsContent() {
           <div>
             <h1 className="text-3xl md:text-4xl font-semibold text-[var(--text-primary)]">
               {from && to
-                ? `${AIRPORTS[from]?.city || from} → ${AIRPORTS[to]?.city || to}`
+                ? `${AIRPORTS[from as keyof typeof AIRPORTS]?.city || from} → ${AIRPORTS[to as keyof typeof AIRPORTS]?.city || to}`
                 : 'All Flights'}
             </h1>
             {date && (
