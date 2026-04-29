@@ -14,6 +14,7 @@ interface Props {
   defaultClass: SeatClass
   prices: Record<SeatClass, number>
   seatsLeft: Record<SeatClass, number>
+  walletBalance: number
 }
 
 const classLabel: Record<SeatClass, string> = {
@@ -26,7 +27,7 @@ function generateRef() {
   return 'IND-' + Math.random().toString(36).substring(2, 8).toUpperCase()
 }
 
-export default function BookingForm({ flight, userId, defaultClass, prices, seatsLeft }: Props) {
+export default function BookingForm({ flight, userId, defaultClass, prices, seatsLeft, walletBalance }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
