@@ -45,13 +45,11 @@ export async function POST(req: Request) {
     }
 
     // ── 1. Fetch flight ────────────────────────────────────────────────────
-    const { data, error: flightErr } = await serviceSupabase
+    const { data: flight } = await supabase
   .from('flights')
   .select('*')
   .eq('id', flight_id)
   .single()
-
-const flight = data as any
 
     if (flightErr || !flight) {
       return NextResponse.json({ error: 'Flight not found' }, { status: 404 })

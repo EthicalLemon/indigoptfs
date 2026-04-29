@@ -66,7 +66,9 @@ export default async function BookingsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {bookings.map((b) => {
-              const flight = b.flight ?? {}
+              // ✅ FIX: handle array vs object
+              const flight = Array.isArray(b.flight) ? b.flight[0] : b.flight
+
               return (
                 <Link
                   key={b.id}
@@ -84,8 +86,12 @@ export default async function BookingsPage() {
 
                   <div className="flex items-center gap-3 mb-3">
                     <div>
-                      <div className="text-white text-xl font-semibold">{flight.departure_code}</div>
-                      <div className="text-white/40 text-xs">{flight.departure_city}</div>
+                      <div className="text-white text-xl font-semibold">
+                        {flight?.departure_code}
+                      </div>
+                      <div className="text-white/40 text-xs">
+                        {flight?.departure_city}
+                      </div>
                     </div>
 
                     <div className="flex-1 flex items-center gap-2">
@@ -95,13 +101,19 @@ export default async function BookingsPage() {
                     </div>
 
                     <div className="text-right">
-                      <div className="text-white text-xl font-semibold">{flight.arrival_code}</div>
-                      <div className="text-white/40 text-xs">{flight.arrival_city}</div>
+                      <div className="text-white text-xl font-semibold">
+                        {flight?.arrival_code}
+                      </div>
+                      <div className="text-white/40 text-xs">
+                        {flight?.arrival_city}
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="text-white/40 text-xs">{formatDate(flight.departure_time)}</div>
+                    <div className="text-white/40 text-xs">
+                      {formatDate(flight?.departure_time)}
+                    </div>
                     <div className="flex items-center gap-3">
                       <span className="text-white font-medium text-sm">
                         ₹{Number(b.total_price).toLocaleString('en-IN')}
