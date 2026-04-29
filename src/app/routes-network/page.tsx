@@ -50,6 +50,9 @@ const REGION_CODES: Record<string, string[]> = {
   Pacific:          ['NRT', 'SYD'],
 }
 
+// ✅ Helper to safely index AIRPORTS with any string
+const getAirport = (code: string) => AIRPORTS[code as keyof typeof AIRPORTS]
+
 export default function RoutesPage() {
   const [region, setRegion] = useState('All')
   const [search, setSearch]   = useState('')
@@ -58,8 +61,8 @@ export default function RoutesPage() {
     const q = search.toLowerCase()
     const matchesSearch =
       q === '' ||
-      AIRPORTS[r.from]?.city.toLowerCase().includes(q) ||
-      AIRPORTS[r.to]?.city.toLowerCase().includes(q) ||
+      getAirport(r.from)?.city.toLowerCase().includes(q) ||
+      getAirport(r.to)?.city.toLowerCase().includes(q) ||
       r.from.toLowerCase().includes(q) ||
       r.to.toLowerCase().includes(q)
 
@@ -212,7 +215,7 @@ export default function RoutesPage() {
                             {route.from}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {AIRPORTS[route.from]?.city}
+                            {getAirport(route.from)?.city}
                           </div>
                         </div>
                       </div>
@@ -225,7 +228,7 @@ export default function RoutesPage() {
                             {route.to}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {AIRPORTS[route.to]?.city}
+                            {getAirport(route.to)?.city}
                           </div>
                         </div>
                       </div>
