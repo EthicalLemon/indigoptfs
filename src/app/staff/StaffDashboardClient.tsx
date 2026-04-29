@@ -9,19 +9,17 @@ import {
 import { StaffDashboardStats } from './StaffDashboardStats'
 import { StaffFlightManager } from './StaffFlightManager'
 import { StaffUserManager } from './StaffUserManager'
+import type { Profile } from '@/types'
 
-interface Profile {
-  id: string
-  email: string
-  full_name: string
-  role: 'admin' | 'staff' | 'host'
-  avatar_url?: string | null
-}
+// ✅ FIX: removed local Profile interface that was missing `created_at`.
+// Now using the shared Profile type from @/types which matches what
+// StaffDashboardStats and StaffFlightManager expect.
 
 const ROLE_CONFIG = {
   admin: { label: 'Admin', color: '#f97316', glow: 'rgba(249,115,22,0.5)' },
   staff: { label: 'Staff', color: '#22d3ee', glow: 'rgba(34,211,238,0.5)' },
   host:  { label: 'Host',  color: '#a78bfa', glow: 'rgba(167,139,250,0.5)' },
+  user:  { label: 'User',  color: '#94a3b8', glow: 'rgba(148,163,184,0.5)' },
 }
 
 const NAV = [
@@ -48,7 +46,7 @@ export default function StaffDashboardClient({ profile }: { profile: Profile }) 
   const [active, setActive] = useState('overview')
   const [collapsed, setCollapsed] = useState(false)
 
-  const rc = ROLE_CONFIG[profile.role]
+  const rc = ROLE_CONFIG[profile.role] ?? ROLE_CONFIG.user
   const visibleNav = NAV.filter(n => n.roles.includes(profile.role))
   const activeLabel = NAV.find(n => n.id === active)?.label ?? 'Overview'
 
