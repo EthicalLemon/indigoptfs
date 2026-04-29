@@ -77,3 +77,6 @@ export const formatDuration = (minutes: number) => {
 export const formatPrice = (n: number) => {
   return `₹${Number(n).toLocaleString('en-IN')}`
 }
+export function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ')
+}
