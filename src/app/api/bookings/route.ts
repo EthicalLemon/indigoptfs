@@ -155,7 +155,15 @@ export async function POST(req: Request) {
     // ── 9. Send Discord DM ─────────────────────────────────────────────────
     if (profile.discord_id) {
       try {
-        const classLabel = { economy: 'Economy', business: 'Business', first: 'First Class' }[seat_class] ?? seat_class
+        type SeatClass = 'economy' | 'business' | 'first'
+
+const classMap: Record<SeatClass, string> = {
+  economy: 'Economy',
+  business: 'Business',
+  first: 'First Class'
+}
+
+const classLabel = classMap[seat_class as SeatClass] ?? seat_class
         const depDate = new Date(flight.departure_time).toLocaleString('en-IN', {
           weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
           hour: '2-digit', minute: '2-digit', hour12: false,
