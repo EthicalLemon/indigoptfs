@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Moon, Sun, Menu, X, Home } from 'lucide-react'
@@ -8,7 +8,6 @@ import { useTheme } from '@/components/ui/ThemeProvider'
 import { motion } from 'framer-motion'
 import GlassSurface from '@/components/ui/GlassSurface'
 import UserMenu from '@/components/UserMenu'
-import WalletDisplay from '@/components/WalletDisplay'
 import { createClient } from '@/lib/supabase/client'
 
 const NAV_LINKS = [
@@ -20,105 +19,71 @@ const NAV_LINKS = [
   { href: '/blog',           label: 'Blog'     },
 ]
 
-// ─── Module-level session cache ────────────────────────────────────────────────
-// Shared across all navbar renders so we never hit Supabase more than once
-// per browser session. Role is cached too so profile is never re-fetched.
-let _cachedUser:   { id: string; email?: string } | null = undefined as any
-let _cachedRole:   string | null = null
-let _cacheReady:   boolean = false
+// Module-level cache — shared across mounts so we never double-fetch
+let _cachedUser:  { id: string; email?: string } | null = null
+let _cachedRole:  string | null = null
+let _cacheReady:  boolean = false
 
-// ─── Module-level supabase client ─────────────────────────────────────────────
-// Created once at module load — never recreated across re-renders or remounts.
 const supabase = createClient()
 
 export function Navbar() {
   const [open, setOpen]   = useState(false)
   const [user, setUser]   = useState<{ id: string; email?: string } | null>(null)
   const [role, setRole]   = useState<string | null>(null)
-  const [ready, setReady] = useState(false)   // prevents flash of wrong state
+  const [ready, setReady] = useState(false)
 
-  const pathname     = usePathname()
-  const isStaffPage  = pathname.startsWith('/staff')
+  const pathname    = usePathname()
+  const isStaffPage = pathname.startsWith('/staff')
   const { theme, toggle } = useTheme()
 
-  // ── Load session exactly once ───────────────────────────────────────────────
-  const loadSession = useCallback(async () => {
-    // Already cached from a previous mount — use it instantly
-    if (_cacheReady) {
-      setUser(_cachedUser)
-      setRole(_cachedRole)
-      setReady(true)
-      return
-    }
-
-    // First ever load — one call, cache results
-    // Use getUser() not getSession() — getSession() can return null on Vercel edge
-    const { data: { user: sessionUser } } = await supabase.auth.getUser()
-
-    if (sessionUser) {
-      // Single profile fetch, cached immediately
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', sessionUser.id)
-        .maybeSingle()
-
-      _cachedRole = profile?.role ?? null
-      _cachedUser = { id: sessionUser.id, email: sessionUser.email }
-    } else {
-      _cachedRole = null
-      _cachedUser = null
-    }
-
-    _cacheReady = true
-    setUser(_cachedUser)
-    setRole(_cachedRole)
-    setReady(true)
-  }, [])
-
   useEffect(() => {
-    loadSession()
-
-    // Auth state listener — only fires on actual sign-in / sign-out events
-    // NOT on every tab focus or token refresh (those use getSession above)
+    // onAuthStateChange fires immediately on mount with the current session.
+    // This is the correct way to detect post-OAuth redirects — no race condition.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Ignore TOKEN_REFRESHED — no need to re-fetch anything
+        // TOKEN_REFRESHED is silent — no UI update needed
         if (event === 'TOKEN_REFRESHED') return
 
         const sessionUser = session?.user ?? null
 
-        if (event === 'SIGNED_OUT' || !sessionUser) {
-          _cachedUser  = null
-          _cachedRole  = null
-          _cacheReady  = true
+        if (!sessionUser) {
+          _cachedUser = null
+          _cachedRole = null
+          _cacheReady = true
           setUser(null)
           setRole(null)
+          setReady(true)
           return
         }
 
-        if (event === 'SIGNED_IN') {
-          // Fetch role once on sign-in, then cache
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', sessionUser.id)
-            .maybeSingle()
-
-          _cachedUser  = { id: sessionUser.id, email: sessionUser.email }
-          _cachedRole  = profile?.role ?? null
-          _cacheReady  = true
+        // Hit the cache if we already know this user's role
+        if (_cacheReady && _cachedUser?.id === sessionUser.id) {
           setUser(_cachedUser)
           setRole(_cachedRole)
+          setReady(true)
+          return
         }
+
+        // Fetch role once, then cache
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', sessionUser.id)
+          .maybeSingle()
+
+        _cachedUser = { id: sessionUser.id, email: sessionUser.email }
+        _cachedRole = profile?.role ?? null
+        _cacheReady = true
+        setUser(_cachedUser)
+        setRole(_cachedRole)
+        setReady(true)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [loadSession])
+  }, [])
 
   const handleLogout = async () => {
-    // Clear cache on logout
     _cachedUser = null
     _cachedRole = null
     _cacheReady = false
@@ -128,18 +93,14 @@ export function Navbar() {
 
   const isStaff = ['admin', 'staff', 'host'].includes(role ?? '')
 
-  // Don't render auth-dependent UI until we know the session state
-  // This prevents the flicker of "Login" before user loads
-  const authReady = ready
-
   return (
     <>
-      {/* TOP RIGHT — wallet + user menu (only when logged in) */}
-      {authReady && user && (
-  <div className="fixed top-6 right-6 z-50">
-    <UserMenu />
-  </div>
-)}
+      {/* User menu — top right, only when logged in */}
+      {ready && user && (
+        <div className="fixed top-6 right-6 z-50">
+          <UserMenu />
+        </div>
+      )}
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
         <GlassSurface
@@ -214,8 +175,8 @@ export function Navbar() {
               </button>
             </DockItem>
 
-            {/* AUTH — hidden until ready to prevent flash */}
-            {authReady && (
+            {/* AUTH — hidden until session is known */}
+            {ready && (
               user ? (
                 <>
                   {isStaff && !isStaffPage && (
@@ -288,11 +249,8 @@ export function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                {authReady && user && (
-                  <button
-                    onClick={handleLogout}
-                    className="text-left text-sm text-red-400"
-                  >
+                {ready && user && (
+                  <button onClick={handleLogout} className="text-left text-sm text-red-400">
                     Sign out
                   </button>
                 )}

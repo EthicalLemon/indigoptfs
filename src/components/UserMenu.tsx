@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import WalletModal from './WalletModal'
 
-// Module-level client — created once, never recreated
 let _client: ReturnType<typeof createClient> | null = null
 function getClient() {
   if (!_client) _client = createClient()
@@ -25,27 +24,32 @@ export default function UserMenu() {
   const [walletOpen, setWalletOpen] = useState(false)
   const [menuOpen, setMenuOpen]     = useState(false)
   const menuRef                     = useRef<HTMLDivElement>(null)
-  const loaded                      = useRef(false)
 
   useEffect(() => {
-    if (loaded.current) return
-    loaded.current = true
+    const supabase = getClient()
 
-    async function load() {
-      const supabase = getClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
+    async function fetchProfile(userId: string) {
       const { data } = await supabase
         .from('profiles')
         .select('id, full_name, email, role, avatar_url, discord_id')
-        .eq('id', user.id)
+        .eq('id', userId)
         .maybeSingle()
-
       if (data) setProfile(data)
     }
 
-    load()
+    // onAuthStateChange fires immediately with the current session on mount —
+    // this is the reliable way to catch post-OAuth redirects without a race condition.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        } else {
+          setProfile(null)
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
   }, [])
 
   // Close menu on outside click
@@ -73,7 +77,7 @@ export default function UserMenu() {
     <>
       <div ref={menuRef} className="relative">
 
-        {/* ── Capsule trigger ── */}
+        {/* Capsule trigger */}
         <button
           onClick={() => setMenuOpen(o => !o)}
           className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full transition-all duration-200"
@@ -84,13 +88,8 @@ export default function UserMenu() {
             WebkitBackdropFilter: 'blur(12px)',
           }}
         >
-          {/* Avatar */}
           {profile.avatar_url ? (
-            <img
-              src={profile.avatar_url}
-              alt=""
-              className="w-7 h-7 rounded-full object-cover"
-            />
+            <img src={profile.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" />
           ) : (
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
@@ -100,12 +99,10 @@ export default function UserMenu() {
             </div>
           )}
 
-          {/* Name */}
           <span className="text-sm font-medium max-w-[120px] truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
             {name.split(' ')[0]}
           </span>
 
-          {/* Chevron */}
           <svg
             width="12" height="12" viewBox="0 0 12 12" fill="none"
             className="transition-transform duration-200"
@@ -118,18 +115,18 @@ export default function UserMenu() {
           </svg>
         </button>
 
-        {/* ── Dropdown menu ── */}
+        {/* Dropdown */}
         {menuOpen && (
           <div
             className="absolute right-0 mt-2 w-52 rounded-2xl overflow-hidden shadow-2xl"
             style={{
-              background:         'rgba(15,15,25,0.85)',
-              border:             '1px solid rgba(255,255,255,0.10)',
-              backdropFilter:     'blur(20px)',
+              background:           'rgba(15,15,25,0.85)',
+              border:               '1px solid rgba(255,255,255,0.10)',
+              backdropFilter:       'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            {/* User info header */}
+            {/* Header */}
             <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
               <div className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 {profile.full_name ?? 'Passenger'}
@@ -139,13 +136,10 @@ export default function UserMenu() {
               </div>
             </div>
 
-
-            {/* Menu items */}
             <div className="p-1.5">
-              {/* Wallet */}
               <button
                 onClick={() => { setMenuOpen(false); setWalletOpen(true) }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left group"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
                 style={{ color: 'rgba(255,255,255,0.75)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -154,25 +148,19 @@ export default function UserMenu() {
                 <span>Wallet</span>
               </button>
 
-             {/* Bookings */}
-<button
-  onClick={() => {
-    setMenuOpen(false)
-    window.location.href = '/bookings'
-  }}
-  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left group"
-  style={{ color: 'rgba(255,255,255,0.75)' }}
-  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
-  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
->
-  <span className="text-base">🎫</span>
-  <span>My Bookings</span>
-</button>
+              <button
+                onClick={() => { setMenuOpen(false); window.location.href = '/manage' }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
+                style={{ color: 'rgba(255,255,255,0.75)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span className="text-base">🎫</span>
+                <span>My Bookings</span>
+              </button>
 
-{/* Divider */}
-<div className="my-1 mx-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
+              <div className="my-1 mx-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
 
-              {/* Sign out */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
@@ -188,7 +176,6 @@ export default function UserMenu() {
         )}
       </div>
 
-      {/* Wallet modal rendered at top level */}
       {walletOpen && (
         <WalletModal userId={profile.id} onClose={() => setWalletOpen(false)} />
       )}
