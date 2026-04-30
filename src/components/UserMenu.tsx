@@ -1,70 +1,27 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/AuthProvider'
 import WalletModal from './WalletModal'
 
-let _client: ReturnType<typeof createClient> | null = null
-function getClient() {
-  if (!_client) _client = createClient()
-  return _client
-}
-
-interface UserProfile {
-  id: string
-  full_name: string | null
-  email: string
-  role: string
-  avatar_url: string | null
-  discord_id: string | null
-}
+const supabase = createClient()
 
 export default function UserMenu() {
-  const [profile, setProfile]       = useState<UserProfile | null>(null)
+  const { profile } = useAuth()   // data already loaded by AuthProvider
   const [walletOpen, setWalletOpen] = useState(false)
   const [menuOpen, setMenuOpen]     = useState(false)
   const menuRef                     = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const supabase = getClient()
-
-    async function fetchProfile(userId: string) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, role, avatar_url, discord_id')
-        .eq('id', userId)
-        .maybeSingle()
-      if (data) setProfile(data)
+  // Close on outside click
+  const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      setMenuOpen(false)
     }
-
-    // onAuthStateChange fires immediately with the current session on mount —
-    // this is the reliable way to catch post-OAuth redirects without a race condition.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // Close menu on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+  }
 
   const handleLogout = async () => {
-    await getClient().auth.signOut()
+    await supabase.auth.signOut()
     location.reload()
   }
 
@@ -76,15 +33,14 @@ export default function UserMenu() {
   return (
     <>
       <div ref={menuRef} className="relative">
-
         {/* Capsule trigger */}
         <button
           onClick={() => setMenuOpen(o => !o)}
           className="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full transition-all duration-200"
           style={{
-            background:   'rgba(255,255,255,0.08)',
-            border:       '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(12px)',
+            background:           'rgba(255,255,255,0.08)',
+            border:               '1px solid rgba(255,255,255,0.12)',
+            backdropFilter:       'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
           }}
         >
@@ -98,18 +54,12 @@ export default function UserMenu() {
               {initial}
             </div>
           )}
-
           <span className="text-sm font-medium max-w-[120px] truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
             {name.split(' ')[0]}
           </span>
-
           <svg
             width="12" height="12" viewBox="0 0 12 12" fill="none"
-            className="transition-transform duration-200"
-            style={{
-              color: 'rgba(255,255,255,0.5)',
-              transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
+            style={{ color: 'rgba(255,255,255,0.5)', transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
           >
             <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -126,7 +76,6 @@ export default function UserMenu() {
               WebkitBackdropFilter: 'blur(20px)',
             }}
           >
-            {/* Header */}
             <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
               <div className="text-sm font-medium truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 {profile.full_name ?? 'Passenger'}
@@ -137,40 +86,10 @@ export default function UserMenu() {
             </div>
 
             <div className="p-1.5">
-              <button
-                onClick={() => { setMenuOpen(false); setWalletOpen(true) }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
-                style={{ color: 'rgba(255,255,255,0.75)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span className="text-base">💰</span>
-                <span>Wallet</span>
-              </button>
-
-              <button
-                onClick={() => { setMenuOpen(false); window.location.href = '/manage' }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
-                style={{ color: 'rgba(255,255,255,0.75)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.15)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span className="text-base">🎫</span>
-                <span>My Bookings</span>
-              </button>
-
+              <MenuButton icon="💰" label="Wallet" onClick={() => { setMenuOpen(false); setWalletOpen(true) }} />
+              <MenuButton icon="🎫" label="My Bookings" onClick={() => { setMenuOpen(false); window.location.href = '/manage' }} />
               <div className="my-1 mx-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }} />
-
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
-                style={{ color: 'rgba(239,68,68,0.85)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.10)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <span className="text-base">👋</span>
-                <span>Sign out</span>
-              </button>
+              <MenuButton icon="👋" label="Sign out" onClick={handleLogout} danger />
             </div>
           </div>
         )}
@@ -180,5 +99,25 @@ export default function UserMenu() {
         <WalletModal userId={profile.id} onClose={() => setWalletOpen(false)} />
       )}
     </>
+  )
+}
+
+function MenuButton({ icon, label, onClick, danger }: {
+  icon: string
+  label: string
+  onClick: () => void
+  danger?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left"
+      style={{ color: danger ? 'rgba(239,68,68,0.85)' : 'rgba(255,255,255,0.75)' }}
+      onMouseEnter={e => (e.currentTarget.style.background = danger ? 'rgba(239,68,68,0.10)' : 'rgba(99,102,241,0.15)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    >
+      <span className="text-base">{icon}</span>
+      <span>{label}</span>
+    </button>
   )
 }

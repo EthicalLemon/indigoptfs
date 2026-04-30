@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Moon, Sun, Menu, X, Home } from 'lucide-react'
@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 import GlassSurface from '@/components/ui/GlassSurface'
 import UserMenu from '@/components/UserMenu'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/AuthProvider'
 
 const NAV_LINKS = [
   { href: '/flights',        label: 'Flights'  },
@@ -19,79 +20,22 @@ const NAV_LINKS = [
   { href: '/blog',           label: 'Blog'     },
 ]
 
-// Module-level cache — shared across mounts so we never double-fetch
-let _cachedUser:  { id: string; email?: string } | null = null
-let _cachedRole:  string | null = null
-let _cacheReady:  boolean = false
-
 const supabase = createClient()
 
 export function Navbar() {
-  const [open, setOpen]   = useState(false)
-  const [user, setUser]   = useState<{ id: string; email?: string } | null>(null)
-  const [role, setRole]   = useState<string | null>(null)
-  const [ready, setReady] = useState(false)
+  const [open, setOpen] = useState(false)
+  const { user, role, ready } = useAuth()   // single source of truth
 
   const pathname    = usePathname()
   const isStaffPage = pathname.startsWith('/staff')
   const { theme, toggle } = useTheme()
 
-  useEffect(() => {
-    // onAuthStateChange fires immediately on mount with the current session.
-    // This is the correct way to detect post-OAuth redirects — no race condition.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        // TOKEN_REFRESHED is silent — no UI update needed
-        if (event === 'TOKEN_REFRESHED') return
-
-        const sessionUser = session?.user ?? null
-
-        if (!sessionUser) {
-          _cachedUser = null
-          _cachedRole = null
-          _cacheReady = true
-          setUser(null)
-          setRole(null)
-          setReady(true)
-          return
-        }
-
-        // Hit the cache if we already know this user's role
-        if (_cacheReady && _cachedUser?.id === sessionUser.id) {
-          setUser(_cachedUser)
-          setRole(_cachedRole)
-          setReady(true)
-          return
-        }
-
-        // Fetch role once, then cache
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', sessionUser.id)
-          .maybeSingle()
-
-        _cachedUser = { id: sessionUser.id, email: sessionUser.email }
-        _cachedRole = profile?.role ?? null
-        _cacheReady = true
-        setUser(_cachedUser)
-        setRole(_cachedRole)
-        setReady(true)
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
+  const isStaff = ['admin', 'staff', 'host'].includes(role ?? '')
 
   const handleLogout = async () => {
-    _cachedUser = null
-    _cachedRole = null
-    _cacheReady = false
     await supabase.auth.signOut()
     location.reload()
   }
-
-  const isStaff = ['admin', 'staff', 'host'].includes(role ?? '')
 
   return (
     <>
@@ -121,7 +65,6 @@ export function Navbar() {
         >
           <div className="flex items-center gap-2 px-4 py-2.5">
 
-            {/* HOME */}
             <DockItem>
               <Link
                 href="/"
@@ -129,9 +72,7 @@ export function Navbar() {
                 style={{
                   background: pathname === '/'
                     ? 'rgba(99,102,241,1)'
-                    : theme === 'dark'
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.06)',
+                    : theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                   color: pathname === '/' ? '#fff' : theme === 'dark' ? 'rgba(255,255,255,0.75)' : 'rgba(30,30,40,0.7)',
                   boxShadow: pathname === '/' ? '0 2px 12px rgba(99,102,241,0.4)' : 'none',
                 }}
@@ -142,7 +83,6 @@ export function Navbar() {
 
             <Divider theme={theme} />
 
-            {/* NAV LINKS */}
             {NAV_LINKS.map(link => {
               const active = pathname === link.href
               return (
@@ -164,7 +104,6 @@ export function Navbar() {
 
             <Divider theme={theme} />
 
-            {/* THEME TOGGLE */}
             <DockItem>
               <button
                 onClick={toggle}
@@ -175,7 +114,7 @@ export function Navbar() {
               </button>
             </DockItem>
 
-            {/* AUTH — hidden until session is known */}
+            {/* AUTH — hidden until session known to prevent flash */}
             {ready && (
               user ? (
                 <>
@@ -220,7 +159,6 @@ export function Navbar() {
               )
             )}
 
-            {/* MOBILE MENU TOGGLE */}
             <DockItem>
               <button
                 onClick={() => setOpen(!open)}
@@ -234,7 +172,6 @@ export function Navbar() {
           </div>
         </GlassSurface>
 
-        {/* MOBILE MENU */}
         {open && (
           <div className="mt-3 md:hidden">
             <GlassSurface borderRadius={16}>
@@ -264,11 +201,7 @@ export function Navbar() {
 }
 
 function DockItem({ children }: { children: React.ReactNode }) {
-  return (
-    <motion.div whileHover={{ y: -10, scale: 1.08 }}>
-      {children}
-    </motion.div>
-  )
+  return <motion.div whileHover={{ y: -10, scale: 1.08 }}>{children}</motion.div>
 }
 
 function Divider({ theme }: { theme: string }) {
