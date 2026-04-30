@@ -52,8 +52,8 @@ export function Navbar() {
     }
 
     // First ever load — one call, cache results
-    const { data: { session } } = await supabase.auth.getSession()
-    const sessionUser = session?.user ?? null
+    // Use getUser() not getSession() — getSession() can return null on Vercel edge
+    const { data: { user: sessionUser } } = await supabase.auth.getUser()
 
     if (sessionUser) {
       // Single profile fetch, cached immediately

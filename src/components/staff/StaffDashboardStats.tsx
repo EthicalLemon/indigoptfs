@@ -1,10 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plane, Users, Calendar, TrendingUp, Clock, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client' // ✅ FIXED
+import { Plane, Users, TrendingUp, CheckCircle } from 'lucide-react'
 import type { Flight, Profile } from '@/types'
 import { formatTime, formatDate, STATUS_COLORS, STATUS_LABELS } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 export function StaffDashboardStats({ profile }: { profile: Profile }) {
   const [stats, setStats] = useState({ flights: 0, bookings: 0, users: 0, revenue: 0 })
@@ -51,10 +51,10 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
   }, [])
 
   const statCards = [
-    { icon: Plane, label: 'Total Flights', value: stats.flights, color: '#6366f1', suffix: '' },
-    { icon: CheckCircle, label: 'Confirmed Bookings', value: stats.bookings, color: '#22c55e', suffix: '' },
-    { icon: Users, label: 'Registered Users', value: stats.users, color: '#f59e0b', suffix: '' },
-    { icon: TrendingUp, label: 'Total Revenue', value: stats.revenue, color: '#ec4899', suffix: '', isCurrency: true },
+    { icon: Plane, label: 'Total Flights', value: stats.flights, color: '#6366f1' },
+    { icon: CheckCircle, label: 'Confirmed Bookings', value: stats.bookings, color: '#22c55e' },
+    { icon: Users, label: 'Registered Users', value: stats.users, color: '#f59e0b' },
+    { icon: TrendingUp, label: 'Total Revenue', value: stats.revenue, color: '#ec4899', isCurrency: true },
   ]
 
   return (
@@ -64,7 +64,7 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
           Welcome, {profile?.full_name?.split(' ')[0] || 'Staff'} 👋
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Here's what's happening at IndiGo Airlines today.
+          Here&apos;s what&apos;s happening at IndiGo Airlines today.
         </p>
       </motion.div>
 
@@ -91,7 +91,7 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
               <div className="font-display font-bold text-3xl mb-1" style={{ color: 'var(--text-primary)' }}>
                 {loading
                   ? '—'
-                  : card.isCurrency
+                  : (card as any).isCurrency
                   ? `₹${(card.value / 100000).toFixed(1)}L`
                   : card.value.toLocaleString()}
               </div>
@@ -141,35 +141,38 @@ export function StaffDashboardStats({ profile }: { profile: Profile }) {
                   </td>
                 </tr>
               ) : (
-                recentFlights.map(flight => (
-                  <tr key={flight.id}>
-                    <td>
-                      <span className="font-mono font-bold text-sm" style={{ color: 'var(--indigo-accent)' }}>
-                        {flight.flight_number}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {flight.departure_code} → {flight.arrival_code}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {formatDate(flight.departure_time)} {formatTime(flight.departure_time)}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge text-xs ${STATUS_COLORS[flight.status]}`}>
-                        {STATUS_LABELS[flight.status]}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {flight.host?.full_name || '—'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                recentFlights.map(flight => {
+                  const status = flight.status as keyof typeof STATUS_COLORS
+                  return (
+                    <tr key={flight.id}>
+                      <td>
+                        <span className="font-mono font-bold text-sm" style={{ color: 'var(--indigo-accent)' }}>
+                          {flight.flight_number}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          {flight.departure_code} → {flight.arrival_code}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          {formatDate(flight.departure_time)} {formatTime(flight.departure_time)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge text-xs ${STATUS_COLORS[status]}`}>
+                          {STATUS_LABELS[status]}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          {(flight as any).host?.full_name || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>

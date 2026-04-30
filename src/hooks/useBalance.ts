@@ -8,24 +8,20 @@ export function useBalance() {
   const [balance, setBalance] = useState<number | null>(null)
 
   useEffect(() => {
-    let userId: string
-
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      userId = user.id
-
-      // 🔹 Fetch initial balance
+      // Fetch from wallets table (not profiles)
       const { data } = await supabase
-        .from('profiles')
+        .from('wallets')
         .select('balance')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single()
 
-      setBalance(data?.balance || 0)
+      setBalance(data?.balance ?? 0)
 
-      // 🔥 REALTIME SYNC
+      // Realtime sync on wallets table
       supabase
         .channel('wallet-live')
         .on(
@@ -33,8 +29,8 @@ export function useBalance() {
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'profiles',
-            filter: `id=eq.${user.id}`,
+            table: 'wallets',
+            filter: `user_id=eq.${user.id}`,
           },
           payload => {
             setBalance(payload.new.balance)

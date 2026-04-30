@@ -125,11 +125,11 @@ if (!supabase) return
   }
 
   const handleDepCode = (code: string) => {
-    setFormData(f => ({ ...f, departure_code: code, departure_city: (AIRPORTS as any)[code]?.city || code }))
+    setFormData(f => ({ ...f, departure_code: code, departure_city: AIRPORTS[code as keyof typeof AIRPORTS]?.city || code }))
   }
 
   const handleArrCode = (code: string) => {
-    setFormData(f => ({ ...f, arrival_code: code, arrival_city: (AIRPORTS as any)[code]?.city || code }))
+    setFormData(f => ({ ...f, arrival_code: code, arrival_city: AIRPORTS[code as keyof typeof AIRPORTS]?.city || code }))
   }
 
   const calcDuration = (dep: string, arr: string) => {
@@ -153,9 +153,9 @@ if (!supabase) return
 
     const payload: Record<string, any> = {
       flight_number: formData.flight_number.toUpperCase().trim(),
-      departure_city: formData.departure_city || (AIRPORTS as any)[formData.departure_code]?.city || formData.departure_code,
+      departure_city: formData.departure_city || AIRPORTS[formData.departure_code as keyof typeof AIRPORTS]?.city || formData.departure_code,
       departure_code: formData.departure_code.toUpperCase(),
-      arrival_city: formData.arrival_city || (AIRPORTS as any)[formData.arrival_code]?.city || formData.arrival_code,
+      arrival_city: formData.arrival_city || AIRPORTS[formData.arrival_code as keyof typeof AIRPORTS]?.city || formData.arrival_code,
       arrival_code: formData.arrival_code.toUpperCase(),
       departure_time: depISO,
       arrival_time: arrISO,

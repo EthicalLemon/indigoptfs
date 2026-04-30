@@ -33,13 +33,13 @@ export default function UserMenu() {
 
     async function load() {
       const supabase = getClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
       const { data } = await supabase
         .from('profiles')
         .select('id, full_name, email, role, avatar_url, discord_id')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .maybeSingle()
 
       if (data) setProfile(data)
